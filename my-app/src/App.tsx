@@ -37,7 +37,7 @@ import AdminProfile from './pages/admin/AdminProfile'
 // @ts-ignore
 import AdminReports from './pages/admin/AdminReports'
 // @ts-ignore
-import AdminUsers from './pages/admin/AdminUsers'
+import UsersManagement from './pages/admin/UsersManagement'
 // @ts-ignore
 import AdminModules from './pages/admin/AdminModules'
 // @ts-ignore
@@ -104,7 +104,7 @@ function App() {
           path="/admin/users" 
           element={
             <ProtectedAdminRoute>
-              <AdminUsers />
+              <UsersManagement />
             </ProtectedAdminRoute>
           } 
         />

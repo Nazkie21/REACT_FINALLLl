@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function StudioBooking() {
   const [step, setStep] = useState(1)
@@ -24,9 +24,7 @@ export default function StudioBooking() {
   const [formErrors, setFormErrors] = useState({})
   const [showTimeModal, setShowTimeModal] = useState(false)
   const [timeConflicts, setTimeConflicts] = useState([])
-  const [qrCode, setQrCode] = useState(null)
-  const qrRef = useRef(null)
-
+  
   // Auto-fill form with user profile data on mount
   useEffect(() => {
     try {
@@ -190,56 +188,6 @@ export default function StudioBooking() {
   // Get minimum date (today)
   const today = new Date().toISOString().split('T')[0];
 
-  // Function to generate QR code for booking check-in
-  const generateQRForBooking = (confirmationId, total) => {
-    // Create QR data object with booking information
-    const qrData = {
-      bookingId: confirmationId,
-      name: bookingData.name,
-      email: bookingData.email,
-      date: bookingData.date,
-      timeSlot: bookingData.timeSlot,
-      service: bookingData.service,
-      duration: bookingData.duration,
-      people: bookingData.people,
-      amount: total,
-      timestamp: new Date().toISOString()
-    }
-
-    // Convert to JSON string for QR encoding
-    const qrString = JSON.stringify(qrData)
-
-    // Generate QR code using qrcode.js
-    if (!window.QRCode) {
-      const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-      script.onload = () => {
-        createQRCodeFromString(qrString)
-      }
-      document.head.appendChild(script)
-    } else {
-      createQRCodeFromString(qrString)
-    }
-  }
-
-  const createQRCodeFromString = (qrString) => {
-    // Delay to ensure DOM is ready
-    setTimeout(() => {
-      if (qrRef.current && window.QRCode) {
-        qrRef.current.innerHTML = ''
-        new window.QRCode(qrRef.current, {
-          text: qrString,
-          width: 200,
-          height: 200,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: window.QRCode.CorrectLevel.H
-        })
-        setQrCode(true)
-      }
-    }, 50)
-  }
-
   const validateForm = () => {
     const errors = {}
     
@@ -302,9 +250,6 @@ export default function StudioBooking() {
       setConfirmationId(refId)
       const total = calculateTotal()
       setTotalAmount(total)
-      
-      // Generate QR code data based on booking information
-      generateQRForBooking(refId, total)
       
       setStep(2)
     }
@@ -398,17 +343,6 @@ export default function StudioBooking() {
     }
   };
 
-  const handleDownloadReceipt = () => {
-    const element = document.getElementById('receipt-content')
-    if (!element) return
-    
-    const html2canvas = window.html2canvas || null
-    if (!html2canvas) {
-      alert('Download feature not available')
-      return
-    }
-  }
-
   const renderReviewDetails = () => (
     <div className="space-y-0">
       <DetailRow label="Name" value={bookingData.name} />
@@ -433,8 +367,6 @@ export default function StudioBooking() {
     <div className="min-h-screen bg-[#1b1b1b] py-12 px-4" style={{
       backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.07), transparent 60%), radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.07), transparent 60%)'
     }}>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-      
       <div className="w-full max-w-2xl mx-auto">
         {/* Back Button */}
         <button
@@ -665,16 +597,6 @@ export default function StudioBooking() {
                 Confirmation #: {confirmationId}
               </div>
               
-              {/* QR Code Section */}
-              <div className="flex justify-center my-6 p-4 bg-[#1b1b1b] rounded-lg border border-[#ffd700]">
-                <div ref={qrRef} className="flex justify-center items-center"></div>
-              </div>
-              
-              <div className="text-center text-sm text-[#bbb] mb-6">
-                <p className="font-semibold text-white">📱 Check-in QR Code</p>
-                <p className="text-xs mt-1">Use this QR code for check-in on the day of your booking</p>
-              </div>
-              
               {renderReviewDetails()}
               
               <div className="bg-[#222114] border-2 border-[#ffd700] rounded-lg p-4 mt-6 text-center">
@@ -707,70 +629,8 @@ export default function StudioBooking() {
           </div>
         )}
       </div>
-
-      {/* Time Slot Modal */}
-      {showTimeModal && bookingData.service && bookingData.date && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-60 z-40" 
-            onClick={() => setShowTimeModal(false)}
-          />
-          {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#232323] rounded-2xl p-8 w-full max-w-2xl relative" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
-              {/* Close Button */}
-              <button
-                onClick={() => setShowTimeModal(false)}
-                className="absolute top-4 right-4 text-[#bbb] hover:text-[#ffd700] text-2xl transition"
-              >
-                ×
-              </button>
-
-              {/* Modal Header */}
-              <h3 className="text-2xl font-bold text-[#ffd700] mb-2">Available Time Slots</h3>
-              <p className="text-[#bbb] mb-4">
-                Date: <span className="text-[#ffd700] font-semibold">{new Date(bookingData.date).toLocaleDateString()}</span>
-              </p>
-
-              {/* Time Slots Grid */}
-              <div className="grid grid-cols-4 gap-2 max-h-96 overflow-y-auto mb-6">
-                {availableTimeSlots.map((time) => {
-                  const isBooked = timeConflicts.includes(time);
-                  return (
-                    <button
-                      key={time}
-                      onClick={() => !isBooked && handleTimeSelect(time)}
-                      disabled={isBooked}
-                      className={`p-3 rounded-lg font-semibold transition border-2 ${
-                        isBooked
-                          ? 'bg-[#3d3d3d] text-[#888] border-[#555] cursor-not-allowed opacity-50'
-                          : bookingData.time === time
-                          ? 'bg-[#ffd700] text-black border-[#ffd700]'
-                          : 'bg-[#1b1b1b] text-white border-[#3d3d3d] hover:border-[#ffd700]'
-                      }`}
-                      title={isBooked ? 'Already booked' : ''}
-                    >
-                      {time}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Action Button */}
-              <button
-                onClick={() => setShowTimeModal(false)}
-                className="w-full bg-[#ffd700] text-black font-bold py-2 rounded-lg hover:bg-[#ffe44c] transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-        </div>
     </div>
-  )
+  );
 }
 
 const FormGroup = ({ label, name, type, value, onChange, error, placeholder, min, max }) => (

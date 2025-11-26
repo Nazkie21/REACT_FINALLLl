@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Download, MoreVertical, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
-import UserStatsCards from '../components/users/UserStatsCards';
-import UserDetailModal from '../components/users/UserDetailModal';
-import UserFormModal from '../components/users/UserFormModal';
-import DeleteConfirmModal from '../components/users/DeleteConfirmModal';
+import UserStatsCards from '../../components/users/UserStatsCards';
+import UserDetailModal from '../../components/users/UserDetailModal';
+import UserFormModal from '../../components/users/UserFormModal';
+import DeleteConfirmModal from '../../components/users/DeleteConfirmModal';
 
 const API_BASE_URL = 'http://localhost:5000/api/admin';
 

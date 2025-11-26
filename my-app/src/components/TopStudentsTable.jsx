@@ -5,12 +5,12 @@ import { ChevronLeft, ChevronRight, Trophy, Crown } from 'lucide-react';
  * TopStudentsTable Component
  * Displays top performing students by XP in the last 30 days
  */
-const TopStudentsTable = ({ onViewProfile }) => {
+const TopStudentsTable = ({ students = [], onViewProfile }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalStudents = 342;
 
-  const data = [
+  // Fallback mock data used when no real data is provided
+  const defaultData = [
     { rank: 1, name: 'Emma Wilson', level: 8, xp: 5200, modules: 7, badges: 12, lastActive: '30 min ago' },
     { rank: 2, name: 'Lucas Chen', level: 7, xp: 4850, modules: 6, badges: 10, lastActive: '2 hours ago' },
     { rank: 3, name: 'Sophia Lopez', level: 7, xp: 4620, modules: 6, badges: 9, lastActive: 'Today' },
@@ -22,6 +22,10 @@ const TopStudentsTable = ({ onViewProfile }) => {
     { rank: 9, name: 'Ava Johnson', level: 5, xp: 3490, modules: 4, badges: 5, lastActive: 'Last week' },
     { rank: 10, name: 'Logan White', level: 4, xp: 3250, modules: 3, badges: 5, lastActive: 'Last week' },
   ];
+
+  // Decide which dataset to display
+  const data = students.length ? students : defaultData;
+  const totalStudents = data.length;
 
   const handlePrevious = () => {
     setCurrentPage(Math.max(1, currentPage - 1));
@@ -59,14 +63,16 @@ const TopStudentsTable = ({ onViewProfile }) => {
             </tr>
           </thead>
           <tbody>
-            {data.map((student) => (
+            {data.map((student, idx) => {
+              const rank = student.rank ?? idx + 1;
+              return(
               <tr 
-                key={student.rank} 
-                className={`border-b border-[#444]/50 hover:bg-white/5 transition duration-200 ${student.rank <= 3 ? 'bg-[#bfa45b]/5' : ''}`}
+                key={rank} 
+                className={`border-b border-[#444]/50 hover:bg-white/5 transition duration-200 ${rank <= 3 ? 'bg-[#bfa45b]/5' : ''}`}
               >
                 <td className="px-4 py-3 text-white font-bold">
                   <div className="flex items-center justify-center w-8 h-8">
-                    {getRankIcon(student.rank)}
+                    {getRankIcon(rank)}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-white font-medium cursor-pointer hover:text-[#bfa45b]">
@@ -78,7 +84,7 @@ const TopStudentsTable = ({ onViewProfile }) => {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-gray-300 font-semibold">
-                  {student.xp.toLocaleString()} XP
+                  {Number(student.xp || 0).toLocaleString()} XP
                 </td>
                 <td className="px-4 py-3 text-gray-300 font-medium">
                   {student.modules}
@@ -92,7 +98,8 @@ const TopStudentsTable = ({ onViewProfile }) => {
                   {student.lastActive}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>
