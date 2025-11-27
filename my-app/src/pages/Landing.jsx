@@ -595,6 +595,7 @@ export default function Landing() {
               </li>
               <li><a href="#gallery" className="px-3 py-2 rounded hover:bg-white/5 transition">Gallery</a></li>
               <li><a href="#contact" className="px-3 py-2 rounded hover:bg-white/5 transition">Contact Us</a></li>
+              <li><a href="/Reservations" className="px-3 py-2 rounded hover:bg-white/5 transition ">Reservation</a></li>
             </ul>
           </nav>
 
@@ -703,6 +704,13 @@ export default function Landing() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <span className="text-lg">Contact Us</span>
+                  </a>
+                  <a 
+                    href="/Reservations" 
+                    className="flex items-center px-6 py-4 font-semibold hover:bg-white/5 transition" 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-lg">Reservation</span>
                   </a>
                   
                   {/* Divider */}

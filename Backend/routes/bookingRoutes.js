@@ -12,7 +12,9 @@ import {
   updatePaymentStatus,
   cancelBooking,
   rescheduleBooking,
-  confirmPayment
+  confirmPayment,
+  getAvailableInstructors,
+  sendConfirmationEmail
 } from '../controllers/bookingController.js';
 
 const router = express.Router();
@@ -28,7 +30,11 @@ router.get('/available-slots', getAvailableSlots);
 // Get available time slots v2 - for new admin form (no auth required)
 router.get('/available-slots-v2', getAvailableSlotsV2);
 
-// Get user's bookings (requires auth) - SPECIFIC ROUTE
+// Get available instructors for music lessons (no auth required)
+router.get('/instructors', getAvailableInstructors);
+
+// Get user's bookings (requires auth) - SPECIFIC ROUTES
+router.get('/user', requireAuth, getUserBookings);
 router.get('/user/my-bookings', requireAuth, getUserBookings);
 
 // Create new booking (REQUIRES AUTH - user must be logged in)
@@ -45,6 +51,9 @@ router.post('/:bookingId/reschedule', rescheduleBooking);
 
 // Confirm payment manually (for testing/admin)
 router.post('/:bookingId/confirm-payment', confirmPayment);
+
+// Send confirmation email
+router.post('/:bookingId/send-confirmation-email', sendConfirmationEmail);
 
 // Get specific booking by ID (public - no auth required for returning from payment) - CATCH-ALL LAST
 router.get('/:bookingId', getBookingById);

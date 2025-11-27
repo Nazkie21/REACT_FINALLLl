@@ -388,37 +388,63 @@ const getDateRange = (period) => {
 /**
  * GET /api/admin/dashboard/revenue
  * Revenue Card with period comparison
+ * Calculates revenue from both transactions table and bookings table
  */
 export const getDashboardRevenue = async (req, res) => {
   try {
     const period = req.query.period || 'month';
     const { startDate, endDate, prevStartDate, prevEndDate } = getDateRange(period);
 
-    // Current period revenue
-    const [currentRevenue] = await query(
+    // Current period revenue from transactions
+    const [currentTransactionRevenue] = await query(
       `SELECT COALESCE(SUM(amount), 0) as total FROM transactions 
        WHERE status = 'completed' 
        AND DATE(transaction_date) BETWEEN ? AND ?`,
       [startDate, endDate]
     );
 
-    // Previous period revenue
-    const [previousRevenue] = await query(
+    // Current period revenue from bookings (paid status)
+    const [currentBookingRevenue] = await query(
+      `SELECT COALESCE(SUM(CAST(total_price AS DECIMAL(10,2))), 0) as total FROM bookings 
+       WHERE payment_status = 'paid' 
+       AND DATE(booking_date) BETWEEN ? AND ?`,
+      [startDate, endDate]
+    );
+
+    // Previous period revenue from transactions
+    const [previousTransactionRevenue] = await query(
       `SELECT COALESCE(SUM(amount), 0) as total FROM transactions 
        WHERE status = 'completed' 
        AND DATE(transaction_date) BETWEEN ? AND ?`,
       [prevStartDate, prevEndDate]
     );
 
-    const current = currentRevenue?.total || 0;
-    const previous = previousRevenue?.total || 0;
+    // Previous period revenue from bookings (paid status)
+    const [previousBookingRevenue] = await query(
+      `SELECT COALESCE(SUM(CAST(total_price AS DECIMAL(10,2))), 0) as total FROM bookings 
+       WHERE payment_status = 'paid' 
+       AND DATE(booking_date) BETWEEN ? AND ?`,
+      [prevStartDate, prevEndDate]
+    );
+
+    // Combine both sources (avoid double counting by using UNION in a subquery)
+    const currentTxn = parseFloat(currentTransactionRevenue?.total) || 0;
+    const currentBook = parseFloat(currentBookingRevenue?.total) || 0;
+    const previousTxn = parseFloat(previousTransactionRevenue?.total) || 0;
+    const previousBook = parseFloat(previousBookingRevenue?.total) || 0;
+    
+    const current = currentTxn + currentBook;
+    const previous = previousTxn + previousBook;
     const percentageChange = previous > 0 ? ((current - previous) / previous * 100).toFixed(2) : 0;
+
+    console.log(`📊 Revenue Calculation - Current: ₱${current}, Previous: ₱${previous}, Change: ${percentageChange}%`);
+    console.log(`📊 Breakdown - Transactions: ₱${currentTxn}, Bookings: ₱${currentBook}`);
 
     res.json({
       success: true,
       data: {
-        current_revenue: current,
-        previous_revenue: previous,
+        current_revenue: parseFloat(current.toFixed(2)),
+        previous_revenue: parseFloat(previous.toFixed(2)),
         percentage_change: parseFloat(percentageChange),
         period: startDate + ' to ' + endDate
       },
@@ -599,6 +625,7 @@ export const getDashboardCompletionRate = async (req, res) => {
 /**
  * GET /api/admin/dashboard/revenue-trend
  * Revenue trend chart data
+ * Combines revenue from both transactions and bookings tables
  */
 export const getRevenueTrend = async (req, res) => {
   try {
@@ -612,7 +639,8 @@ export const getRevenueTrend = async (req, res) => {
       });
     }
 
-    const trendData = await query(
+    // Get transaction revenue by date
+    const transactionTrendData = await query(
       `SELECT 
         DATE(transaction_date) as date,
         COALESCE(SUM(amount), 0) as revenue
@@ -623,6 +651,34 @@ export const getRevenueTrend = async (req, res) => {
        ORDER BY date ASC`,
       [startDate, endDate]
     );
+
+    // Get booking revenue by date
+    const bookingTrendData = await query(
+      `SELECT 
+        DATE(booking_date) as date,
+        COALESCE(SUM(total_amount), 0) as revenue
+       FROM bookings
+       WHERE payment_status = 'paid'
+       AND DATE(booking_date) BETWEEN ? AND ?
+       GROUP BY DATE(booking_date)
+       ORDER BY date ASC`,
+      [startDate, endDate]
+    );
+
+    // Merge the two datasets by date
+    const dateMap = new Map();
+    
+    transactionTrendData.forEach(item => {
+      dateMap.set(item.date, (dateMap.get(item.date) || 0) + item.revenue);
+    });
+    
+    bookingTrendData.forEach(item => {
+      dateMap.set(item.date, (dateMap.get(item.date) || 0) + item.revenue);
+    });
+
+    // Convert back to array and sort by date
+    const trendData = Array.from(dateMap, ([date, revenue]) => ({ date, revenue }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Calculate statistics
     const revenues = trendData.map(d => d.revenue);

@@ -130,21 +130,10 @@ class BookingEmailService {
                   ` : ''}
                 </div>
 
-                <div class="qr-section">
-                  <h3>Check-In QR Code</h3>
-                  <p style="color: #555; margin: 10px 0;">Present this code at check-in:</p>
-                  <img src="${qrDataUrl}" alt="Booking QR Code" class="qr-code" />
-                  <p style="color: #666; font-size: 12px; margin-top: 10px;">ID: ${booking.booking_id}</p>
-                </div>
-
                 <div class="instructions">
-                  <strong>Important Instructions:</strong>
-                  <ul>
-                    <li>Arrive 10 minutes early</li>
-                    <li>Present this QR code at check-in</li>
-                    <li>Keep this email for your records</li>
-                    ${booking.payment_status === 'pending' ? '<li>Complete payment before your booking date</li>' : ''}
-                  </ul>
+                  <strong>✓ Your booking is confirmed!</strong>
+                  <p style="margin: 10px 0; color: #555;">Your studio session has been successfully booked. You will receive further details and check-in instructions closer to your booking date.</p>
+                  ${booking.payment_status === 'pending' ? '<p style="margin: 10px 0; color: #555;"><strong>Note:</strong> Please complete payment before your booking date.</p>' : ''}
                 </div>
 
                 <p>If you have any questions, please contact us.</p>

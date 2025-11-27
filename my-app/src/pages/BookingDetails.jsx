@@ -191,6 +191,27 @@ const BookingDetails = () => {
           </div>
         </div>
 
+        {/* Instructor Information Card (for music lessons) */}
+        {booking.instructor && (
+          <div className="bg-[#232323] rounded-2xl p-6 border border-[#444] mb-6">
+            <h2 className="text-xl font-semibold mb-4">Instructor Information</h2>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div>
+                  <div className="text-[#888] text-xs uppercase">Instructor Name</div>
+                  <div className="text-lg font-semibold">{booking.instructor.instructor_name || 'N/A'}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <div className="text-[#888] text-xs uppercase">Specialization</div>
+                  <div className="text-lg font-semibold text-[#ffd700]">{booking.instructor.specialization || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* QR Code Card */}
         <div className="bg-[#232323] rounded-2xl p-6 border border-[#444] mb-6 flex flex-col items-center">
           <h2 className="text-xl font-semibold mb-4">Appointment QR Code</h2>

@@ -19,7 +19,8 @@ export default function StudioBooking() {
     timeSlot: '',
     startTime: '',
     people: 1,
-    payment: ''
+    payment: '',
+    instructor_id: null
   })
   const [availableSlots, setAvailableSlots] = useState([])
   const [slotsLoading, setSlotsLoading] = useState(false)
@@ -28,6 +29,7 @@ export default function StudioBooking() {
   const [formErrors, setFormErrors] = useState({})
   const [showTimeModal, setShowTimeModal] = useState(false)
   const [timeConflicts, setTimeConflicts] = useState([])
+  const [instructors, setInstructors] = useState([])
 
   // Check if user is authenticated
   useEffect(() => {
@@ -98,6 +100,12 @@ export default function StudioBooking() {
         if (miniBookingData.service && miniBookingData.duration && miniBookingData.date) {
           fetchAvailableSlots(miniBookingData.service, miniBookingData.duration, miniBookingData.date);
         }
+        
+        // If service is music_lesson, fetch instructors
+        if (miniBookingData.service === 'music_lesson') {
+          console.log('🎵 Music lesson detected in autofill, fetching instructors...');
+          fetchInstructors();
+        }
       }
       
       // Clear mini-booking data after using it (after next render)
@@ -160,17 +168,64 @@ export default function StudioBooking() {
     }
   };
 
+  // Fetch available instructors for music lessons
+  const fetchInstructors = async (date = null, time = null, duration = null) => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      
+      // Use provided params or fall back to booking data
+      const queryDate = date || bookingData.date;
+      const queryTime = time || bookingData.timeSlot;
+      const queryDuration = duration || bookingData.duration;
+      
+      let url = `${API_URL}/bookings/instructors`;
+      
+      // Add query params if all are available
+      if (queryDate && queryTime && queryDuration) {
+        url += `?date=${queryDate}&time=${queryTime}&duration=${queryDuration}`;
+        console.log('🔄 Fetching available instructors for:', { date: queryDate, time: queryTime, duration: queryDuration });
+      } else {
+        console.log('🔄 Fetching all instructors (no date/time filter)');
+      }
+      
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch instructors: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Instructors response:', data);
+      if (data.success && data.data) {
+        console.log('✅ Setting instructors:', data.data);
+        setInstructors(data.data);
+      } else {
+        console.warn('⚠️ Invalid response format:', data);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching instructors:', err);
+    }
+  };
+
   // Handle service change
   const handleServiceChange = (service) => {
+    console.log('🎵 Service changed to:', service);
     setBookingData(prev => ({
       ...prev,
       service,
       duration: SERVICE_CONFIG[service]?.durationFixed ? '60' : '',
       date: '',
-      timeSlot: ''
+      timeSlot: '',
+      instructor_id: null
     }));
     setAvailableSlots([]);
     setSlotsError(null);
+    
+    // Fetch instructors if music lesson is selected
+    if (service === 'music_lesson') {
+      console.log('🎵 Music lesson selected, fetching instructors...');
+      fetchInstructors();
+    }
   };
 
   // Handle duration change
@@ -203,6 +258,11 @@ export default function StudioBooking() {
     if (bookingData.service && bookingData.duration) {
       fetchAvailableSlots(bookingData.service, bookingData.duration, date);
     }
+    
+    // Refresh instructor availability if music lesson and time is set
+    if (bookingData.service === 'music_lesson' && bookingData.duration && bookingData.timeSlot) {
+      fetchInstructors(date, bookingData.timeSlot, bookingData.duration);
+    }
   };
 
   // Handle time slot selection
@@ -212,6 +272,11 @@ export default function StudioBooking() {
       timeSlot: slot.display, // For display
       startTime: slot.startTime // For the API
     }));
+    
+    // Refresh instructor availability if music lesson
+    if (bookingData.service === 'music_lesson' && bookingData.date && bookingData.duration) {
+      fetchInstructors(bookingData.date, slot.display, bookingData.duration);
+    }
   };
 
   // Check if all prerequisites are met for time slot dropdown
@@ -247,6 +312,7 @@ export default function StudioBooking() {
     
     // Address is optional
     if (!bookingData.service) errors.service = 'Service type is required'
+    if (bookingData.service === 'music_lesson' && !bookingData.instructor_id) errors.instructor_id = 'Instructor is required for music lessons'
     if (!bookingData.duration) errors.duration = 'Duration is required'
     if (!bookingData.date) errors.date = 'Booking date is required'
     else {
@@ -354,6 +420,7 @@ export default function StudioBooking() {
         duration: parseInt(bookingData.duration, 10),
         people: parseInt(bookingData.people, 10),
         payment: bookingData.payment,
+        instructor_id: bookingData.instructor_id || null,
         userId
       };
 
@@ -402,26 +469,50 @@ export default function StudioBooking() {
 
       console.log('Booking created:', result);
       
+      // Send confirmation email
+      const bookingId = result.data.booking.booking_id;
+      const customerEmail = bookingData.email;
+      
+      try {
+        console.log('📧 Sending confirmation email to:', customerEmail);
+        const emailResponse = await fetch(`${API_URL}/bookings/${bookingId}/send-confirmation-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            email: customerEmail,
+            bookingId: bookingId
+          })
+        });
+        
+        if (emailResponse.ok) {
+          console.log('✅ Confirmation email sent successfully');
+        } else {
+          console.warn('⚠️ Email sending failed, but booking was created');
+        }
+      } catch (emailErr) {
+        console.error('❌ Error sending email:', emailErr);
+      }
+      
       // Check payment method
       if (bookingData.payment === 'Cash') {
-        // For cash payment, redirect immediately to landing page with success (legacy flow)
-        alert('Booking confirmed! Redirecting to view your booking details...');
-        window.location.href = `/?payment=success&booking=${result.data.booking.booking_id}`;
-      } else if (bookingData.payment === 'GCash' || bookingData.payment === 'Credit/Debit Card') {
+        // For cash payment, redirect immediately to landing page with success
+        alert('Booking confirmed! A confirmation email has been sent to ' + customerEmail);
+        window.location.href = '/';
+      } else if (bookingData.payment === 'GCash' || bookingData.payment === 'Credit Card' || bookingData.payment === 'PayMaya') {
         // For online payment, redirect to Xendit checkout
         // Store booking ID in localStorage so we can retrieve it after payment
-        const bookingId = result.data.booking.booking_id;
         localStorage.setItem('currentBookingId', bookingId);
         
         if (result.data?.xenditCheckoutUrl) {
           // After payment, Xendit returns to landing page with success notification
-          const bookingId = result.data.booking.booking_id;
           const returnUrl = `${window.location.origin}/?payment=success&booking=${bookingId}`;
           const xenditUrl = `${result.data.xenditCheckoutUrl}${result.data.xenditCheckoutUrl.includes('?') ? '&' : '?'}return_url=${encodeURIComponent(returnUrl)}`;
           window.location.href = xenditUrl;
         } else if (result.data?.paymentUrl) {
           // Fallback payment URL
-          const bookingId = result.data.booking.booking_id;
           const returnUrl = `${window.location.origin}/?payment=success&booking=${bookingId}`;
           const paymentUrl = `${result.data.paymentUrl}${result.data.paymentUrl.includes('?') ? '&' : '?'}return_url=${encodeURIComponent(returnUrl)}`;
           window.location.href = paymentUrl;
@@ -566,6 +657,27 @@ export default function StudioBooking() {
                   ]}
                 />
 
+                {/* Instructor Selection (for music lessons) */}
+                {bookingData.service === 'music_lesson' && (
+                  <>
+                    {console.log('Instructors available:', instructors)}
+                    <FormSelect
+                      label="Select Instructor *"
+                      name="instructor"
+                      value={bookingData.instructor_id || ''}
+                      onChange={(e) => setBookingData(prev => ({ ...prev, instructor_id: e.target.value ? parseInt(e.target.value) : null }))}
+                      error={formErrors.instructor_id}
+                      options={[
+                        { value: '', label: 'Select an instructor...' },
+                        ...instructors.map(instructor => ({
+                          value: instructor.id,
+                          label: `${instructor.first_name} ${instructor.last_name} - ${instructor.specialization || 'General'}`
+                        }))
+                      ]}
+                    />
+                  </>
+                )}
+
                 {/* Step 2: Duration Selection */}
                 {bookingData.service && (
                   <div className="form-group">
@@ -680,7 +792,8 @@ export default function StudioBooking() {
                   options={[
                     { value: '', label: 'Select payment method...' },
                     { value: 'GCash', label: 'GCash' },
-                    { value: 'Credit/Debit Card', label: 'Credit/Debit Card' },
+                    { value: 'Credit Card', label: 'Credit Card' },
+                    { value: 'PayMaya', label: 'PayMaya' },
                     { value: 'Cash', label: 'Pay on Arrival (Cash)' }
                   ]}
                 />

@@ -393,7 +393,7 @@ export const createBooking = async (req, res) => {
     const bookingReference = `REF-${Date.now()}`;
 
     // For ONLINE payments: Create invoice and Xendit link
-    if (paymentMethod === 'GCash' || paymentMethod === 'Credit/Debit Card') {
+    if (paymentMethod === 'GCash' || paymentMethod === 'Credit Card' || paymentMethod === 'PayMaya') {
       try {
         const invoiceResult = await createInvoice({
           externalId: bookingId.toString(),
@@ -516,15 +516,69 @@ export const getUserBookings = async (req, res) => {
     const userId = req.user.id;
 
     const bookings = await query(
-      `SELECT * FROM bookings 
-       WHERE user_id = ? 
-       ORDER BY booking_date DESC, start_time DESC`,
+      `SELECT 
+        b.booking_id,
+        b.booking_reference,
+        b.booking_date,
+        b.start_time,
+        b.duration_minutes,
+        b.status,
+        b.payment_status,
+        b.user_notes,
+        b.instructor_id,
+        b.qr_code_data,
+        b.qr_code_path,
+        s.service_name,
+        s.instrument,
+        i.first_name as instructor_first_name,
+        i.last_name as instructor_last_name,
+        i.specialization
+       FROM bookings b
+       LEFT JOIN services s ON b.service_id = s.service_id
+       LEFT JOIN users i ON b.instructor_id = i.id
+       WHERE b.user_id = ? 
+       ORDER BY b.booking_date DESC, b.start_time DESC`,
       [userId]
     );
 
+    // Format bookings with service type and instructor info
+    const formattedBookings = bookings.map(booking => {
+      let notes = {};
+      try {
+        notes = booking.user_notes ? JSON.parse(booking.user_notes) : {};
+      } catch (e) {
+        notes = {};
+      }
+
+      const serviceType = notes.original_service || booking.instrument || booking.service_name || 'N/A';
+      const hours = booking.duration_minutes ? Math.ceil(booking.duration_minutes / 60) : 1;
+
+      let instructor = null;
+      if (booking.instructor_id && booking.instructor_first_name) {
+        instructor = {
+          instructor_id: booking.instructor_id,
+          instructor_name: `${booking.instructor_first_name} ${booking.instructor_last_name || ''}`.trim(),
+          specialization: booking.specialization || 'General'
+        };
+      }
+
+      return {
+        booking_id: booking.booking_id,
+        booking_reference: booking.booking_reference,
+        booking_date: booking.booking_date,
+        booking_time: booking.start_time,
+        service_type: serviceType,
+        status: booking.status,
+        payment_status: booking.payment_status,
+        hours,
+        instructor,
+        qr_code_url: booking.qr_code_data || booking.qr_code_path
+      };
+    });
+
     res.json({
       success: true,
-      data: { bookings }
+      data: { bookings: formattedBookings }
     });
   } catch (error) {
     console.error('Get user bookings error:', error);
@@ -563,15 +617,20 @@ export const getBookingById = async (req, res) => {
          b.customer_email,
          b.customer_contact,
          b.customer_address,
+         b.instructor_id,
          u.first_name,
          u.last_name,
          u.email,
          u.contact,
          s.service_name,
-         s.instrument
+         s.instrument,
+         i.first_name as instructor_first_name,
+         i.last_name as instructor_last_name,
+         i.specialization
        FROM bookings b
        LEFT JOIN users u ON b.user_id = u.id
        LEFT JOIN services s ON b.service_id = s.service_id
+       LEFT JOIN users i ON b.instructor_id = i.id AND i.role = 'instructor'
        WHERE b.booking_id = ?
        LIMIT 1`,
       [bookingId]
@@ -648,10 +707,21 @@ export const getBookingById = async (req, res) => {
       ? booking.booking_date.toISOString().split('T')[0]
       : booking.booking_date;
 
+    // Build instructor info if available
+    let instructorInfo = null;
+    if (booking.instructor_id && booking.instructor_first_name) {
+      instructorInfo = {
+        instructor_id: booking.instructor_id,
+        instructor_name: `${booking.instructor_first_name} ${booking.instructor_last_name || ''}`.trim(),
+        specialization: booking.specialization || null
+      };
+    }
+
     res.json({
       success: true,
       data: {
         booking_id: booking.booking_id,
+        booking_reference: booking.booking_reference,
         name: fullName,
         email: email,
         contact: contact,
@@ -663,6 +733,7 @@ export const getBookingById = async (req, res) => {
         payment_status: booking.payment_status,
         total_price: totalPrice,
         qr_code_url: booking.qr_code_data || booking.qr_code_path || booking.qr_code,
+        instructor: instructorInfo,
         created_at: booking.created_at
       }
     });
@@ -1330,6 +1401,186 @@ export const confirmPayment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Send booking confirmation email
+ * POST /api/bookings/:bookingId/send-confirmation-email
+ */
+export const sendConfirmationEmail = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { email } = req.body;
+
+    console.log(`📧 Sending confirmation email for booking ${bookingId} to ${email}`);
+
+    // Fetch booking details
+    const bookings = await query(
+      `SELECT 
+        b.booking_id,
+        b.booking_reference,
+        b.booking_date,
+        b.start_time,
+        b.duration_minutes,
+        b.customer_name,
+        b.customer_email,
+        b.user_notes,
+        b.payment_status,
+        b.qr_code_data,
+        b.qr_code_path,
+        s.service_name
+       FROM bookings b
+       LEFT JOIN services s ON b.service_id = s.service_id
+       WHERE b.booking_id = ?
+       LIMIT 1`,
+      [bookingId]
+    );
+
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    const booking = bookings[0];
+    let notes = {};
+    try {
+      notes = booking.user_notes ? JSON.parse(booking.user_notes) : {};
+    } catch (e) {
+      notes = {};
+    }
+
+    const hours = booking.duration_minutes ? Math.ceil(booking.duration_minutes / 60) : 1;
+    const serviceType = notes.original_service || booking.service_name || 'Studio Session';
+    const qrDataUrl = booking.qr_code_data || booking.qr_code_path || null;
+
+    // Prepare booking data for email service
+    const bookingData = {
+      booking_id: booking.booking_id,
+      name: booking.customer_name || 'Guest',
+      email: email || booking.customer_email,
+      service_type: serviceType,
+      booking_date: booking.booking_date,
+      booking_time: booking.start_time,
+      hours: hours,
+      payment_status: booking.payment_status || 'pending',
+      total_price: '0.00' // TODO: fetch from invoice or calculate
+    };
+
+    // Send email using BookingEmailService
+    let emailSent = false;
+    if (qrDataUrl) {
+      emailSent = await bookingEmailService.sendBookingConfirmation(bookingData, qrDataUrl);
+    } else {
+      console.warn('⚠️ No QR code available for email');
+      emailSent = await bookingEmailService.sendBookingConfirmation(bookingData, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+    }
+
+    if (emailSent) {
+      console.log(`✅ Confirmation email sent successfully to ${email}`);
+      res.json({
+        success: true,
+        message: 'Confirmation email sent successfully'
+      });
+    } else {
+      console.warn(`⚠️ Email sending failed for booking ${bookingId}`);
+      res.json({
+        success: true,
+        message: 'Booking confirmed but email sending failed'
+      });
+    }
+  } catch (error) {
+    console.error('Error sending confirmation email:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send confirmation email',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get available instructors for music lessons
+ * GET /api/bookings/instructors?date=YYYY-MM-DD&time=HH:MM&duration=minutes
+ * Public endpoint - no auth required
+ * Filters out instructors who are already booked at the requested time
+ */
+export const getAvailableInstructors = async (req, res) => {
+  try {
+    const { date, time, duration } = req.query;
+    
+    console.log('Fetching available instructors...', { date, time, duration });
+    
+    // Get all instructors
+    const instructors = await query(
+      `SELECT 
+        id,
+        first_name,
+        last_name,
+        COALESCE(specialization, 'General') as specialization,
+        years_experience,
+        bio,
+        hourly_rate,
+        available_for_booking
+       FROM users 
+       WHERE role = 'instructor' 
+       AND (deleted_at IS NULL OR deleted_at = '')
+       ORDER BY first_name ASC`
+    );
+
+    console.log(`Found ${instructors ? instructors.length : 0} instructors`);
+
+    // If no date/time provided, return all instructors
+    if (!date || !time || !duration) {
+      res.json({
+        success: true,
+        data: instructors || []
+      });
+      return;
+    }
+
+    // Filter out instructors with conflicts
+    const durationMinutes = parseInt(duration) || 60;
+    const [hours, minutes] = time.split(':').map(Number);
+    const startMinutes = hours * 60 + minutes;
+    const endMinutes = startMinutes + durationMinutes;
+
+    const availableInstructors = [];
+
+    for (const instructor of instructors) {
+      // Check if this instructor has any bookings at the requested time
+      const conflicts = await query(
+        `SELECT COUNT(*) as count FROM bookings 
+         WHERE instructor_id = ? 
+         AND booking_date = ? 
+         AND status != 'cancelled'
+         AND (
+           (CAST(SUBSTRING_INDEX(start_time, ':', 1) AS UNSIGNED) * 60 + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(start_time, ':', 2), ':', -1) AS UNSIGNED) < ?)
+           AND (CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(start_time, ':', 2), ':', -1) AS UNSIGNED) + duration_minutes > ?)
+         )`,
+        [instructor.id, date, endMinutes, startMinutes]
+      );
+
+      if (conflicts && conflicts[0] && conflicts[0].count === 0) {
+        availableInstructors.push(instructor);
+      }
+    }
+
+    console.log(`Available instructors after filtering: ${availableInstructors.length}`);
+
+    res.json({
+      success: true,
+      data: availableInstructors || []
+    });
+  } catch (error) {
+    console.error('Error fetching instructors:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch instructors',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

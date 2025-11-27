@@ -11,7 +11,9 @@ import Booking from './pages/Bookings' // This is the User-side booking page
 // @ts-ignore
 import BookingDetails from './pages/BookingDetails'
 // @ts-ignore
-import UserProfile from './pages/Profile' 
+import UserProfile from './pages/Profile'
+// @ts-ignore
+import Reservations from './pages/Reservations'
 
 // --- Auth Pages ---
 // @ts-ignore
@@ -88,6 +90,7 @@ function App() {
         {/* User Routes */}
         <Route path="/Bookings" element={<Booking />} />
         <Route path="/booking/:id" element={<BookingDetails />} />
+        <Route path="/Reservations" element={<Reservations />} />
         <Route path="/Profile" element={<UserProfile />} /> 
 
         {/* --- ADMIN ROUTES --- */}

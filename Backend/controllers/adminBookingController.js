@@ -36,6 +36,7 @@ export const getBookings = async (req, res) => {
       u.contact AS customer_contact,
       i.first_name AS instructor_first_name,
       i.last_name AS instructor_last_name,
+      i.specialization,
       s.service_name,
       s.instrument
       FROM bookings b
@@ -130,9 +131,9 @@ export const getBookings = async (req, res) => {
     // Enrich bookings with payment status
     const enrichedBookings = await Promise.all(
       bookings.map(async (booking) => {
-        let paymentStatus = 'pending';
+        let paymentStatus = booking.payment_status || 'pending';
         
-        // Query transaction table to determine payment status
+        // Query transaction table to determine payment status (override booking.payment_status)
         const transactions = await query(
           `SELECT status, refunded_amount FROM transactions WHERE booking_id = ? ORDER BY transaction_date DESC LIMIT 1`,
           [booking.booking_id]
@@ -149,13 +150,20 @@ export const getBookings = async (req, res) => {
           }
         }
 
+        // Build instructor name - only show if instructor_id exists
+        let instructorName = 'Unassigned';
+        if (booking.instructor_id && booking.instructor_first_name) {
+          instructorName = `${booking.instructor_first_name} ${booking.instructor_last_name || ''}`.trim();
+        }
+
         return {
           ...booking,
           customer_name: `${booking.first_name || ''} ${booking.last_name || ''}`.trim(),
-          instructor_name: booking.instructor_first_name && booking.instructor_last_name 
-            ? `${booking.instructor_first_name} ${booking.instructor_last_name}` 
-            : 'Unassigned',
-          payment_status: paymentStatus
+          instructor_name: instructorName,
+          instructor_id: booking.instructor_id || null,
+          specialization: booking.specialization || null,
+          payment_status: paymentStatus,
+          qr_code: booking.qr_code_data || booking.qr_code_path || null
         };
       })
     );

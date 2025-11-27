@@ -113,6 +113,7 @@ const AdminBookings = () => {
           service_type: booking.instrument || booking.service_name || 'Unknown',
           sub_type: booking.service_name || 'Standard',
           instructor: booking.instructor_name || 'Unassigned',
+          specialization: booking.specialization || null,
           studio: booking.room_location || 'Studio A',
           date: booking.booking_date || 'N/A',
           time_slot: booking.start_time || 'N/A',
@@ -925,6 +926,10 @@ const AdminBookings = () => {
               {/* Left Column - Details */}
               <div className="space-y-4">
                 <div>
+                  <label className="text-xs text-gray-400 uppercase">Booking Reference</label>
+                  <p className="text-[#bfa45b] font-mono font-semibold text-lg">{selectedBooking.booking_id}</p>
+                </div>
+                <div>
                   <label className="text-xs text-gray-400 uppercase">Client Name</label>
                   <p className="text-white font-semibold">{selectedBooking.client_name}</p>
                 </div>
@@ -943,6 +948,9 @@ const AdminBookings = () => {
                 <div>
                   <label className="text-xs text-gray-400 uppercase">Instructor</label>
                   <p className="text-white">{selectedBooking.instructor}</p>
+                  {selectedBooking.specialization && (
+                    <p className="text-gray-400 text-sm">Specialization: {selectedBooking.specialization}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -998,6 +1006,7 @@ const AdminBookings = () => {
                       className="w-48 h-48 bg-white p-2 rounded-lg"
                     />
                     <p className="text-gray-300 text-sm mt-3">QR Code for Check-in</p>
+                    <p className="text-[#bfa45b] font-mono font-semibold text-sm mt-2">{selectedBooking.booking_id}</p>
                   </>
                 ) : (
                   <div className="text-center">

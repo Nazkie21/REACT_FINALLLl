@@ -49,14 +49,15 @@ const TotalRevenueCard = ({ period = 'month', onRefresh = null }) => {
     setAnimateCount(true);
     const duration = 1000;
     const steps = 60;
-    const stepValue = current_revenue / steps;
+    const revenue = parseFloat(current_revenue) || 0;
+    const stepValue = revenue / steps;
     let currentStep = 0;
 
     const interval = setInterval(() => {
       currentStep++;
       setDisplayRevenue(stepValue * currentStep);
       if (currentStep === steps) {
-        setDisplayRevenue(current_revenue);
+        setDisplayRevenue(revenue);
         clearInterval(interval);
       }
     }, duration / steps);
@@ -66,12 +67,14 @@ const TotalRevenueCard = ({ period = 'month', onRefresh = null }) => {
 
   // Format currency to PHP
   const formatCurrency = (value) => {
+    const numValue = parseFloat(value) || 0;
+    if (isNaN(numValue)) return '₱0.00';
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
       currency: 'PHP',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(numValue);
   };
 
   const handleRefresh = () => {
