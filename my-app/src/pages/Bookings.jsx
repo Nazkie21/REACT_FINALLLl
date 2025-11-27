@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export default function StudioBooking() {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [bookingData, setBookingData] = useState({
     name: '',
@@ -25,13 +29,31 @@ export default function StudioBooking() {
   const [showTimeModal, setShowTimeModal] = useState(false)
   const [timeConflicts, setTimeConflicts] = useState([])
 
+  // Check if user is authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const user = localStorage.getItem('user')
+    
+    if (!token || !user) {
+      // User not logged in, redirect to login
+      window.location.href = '/auth/login'
+      return
+    }
+    
+    setIsAuthenticated(true)
+    setIsLoading(false)
+  }, [])
+
   // Auto-fill form with user profile data on mount
   useEffect(() => {
+    if (!isAuthenticated) return
+    
     try {
       const userDataString = localStorage.getItem('user')
       const miniBookingString = localStorage.getItem('miniBookingData')
       
       console.log('Auto-fill useEffect triggered');
+      console.log('User data string:', userDataString);
       console.log('Mini booking string from localStorage:', miniBookingString);
       
       let miniBookingData = {}
@@ -40,11 +62,19 @@ export default function StudioBooking() {
         console.log('Mini booking data parsed:', miniBookingData)
       }
       
-      if (userDataString || miniBookingString) {
-        const userData = userDataString ? JSON.parse(userDataString) : null
-        console.log('User data:', userData);
+      if (userDataString) {
+        const userData = JSON.parse(userDataString)
+        console.log('User data parsed:', userData);
         
-        // Auto-fill fields from user profile, with mini-booking data taking precedence
+        // Auto-fill fields from user profile and mini-booking data
+        const service = miniBookingData.service || ''
+        let duration = miniBookingData.duration || ''
+        
+        // If service has fixed duration and no duration was provided, set it
+        if (service && !duration && SERVICE_CONFIG[service]?.durationFixed) {
+          duration = '60'
+        }
+        
         const updatedData = {
           name: miniBookingData.name || (userData?.first_name && userData?.last_name 
             ? `${userData.first_name} ${userData.last_name}`.trim()
@@ -53,8 +83,8 @@ export default function StudioBooking() {
           contact: userData?.contact || '',
           birthday: userData?.birthday || '',
           address: userData?.home_address || '',
-          service: miniBookingData.service || '',
-          duration: miniBookingData.duration || '',
+          service: service,
+          duration: duration,
           date: miniBookingData.date || '',
           timeSlot: miniBookingData.timeSlot || '',
           people: 1,
@@ -78,7 +108,7 @@ export default function StudioBooking() {
     } catch (err) {
       console.error('Error loading user profile for autofill:', err)
     }
-  }, [])
+  }, [isAuthenticated])
 
   // Service type configuration with pricing (must match backend PRICING)
   const SERVICE_CONFIG = {
@@ -291,10 +321,14 @@ export default function StudioBooking() {
       
       // Get user ID from local storage
       const user = JSON.parse(localStorage.getItem('user'));
-      const userId = user ? user.user_id : null;
+      const userId = user ? (user.user_id || user.id) : null;
       const token = localStorage.getItem('token');
 
       // Extra guard + debug for service selection
+      console.log('=== USER DEBUG ===');
+      console.log('User object:', user);
+      console.log('User ID:', userId);
+      console.log('Token:', token ? 'Present' : 'Missing');
       console.log('=== SERVICE DEBUG ===');
       console.log('Service from state:', bookingData.service);
       console.log('Service type of:', typeof bookingData.service);
@@ -333,6 +367,7 @@ export default function StudioBooking() {
       console.log('Time Slot:', bookingData.startTime || bookingData.timeSlot);
       console.log('Payment method:', bookingData.payment);
       console.log('Final payload:', bookingPayload);
+      console.log('Token being sent:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
       console.log('=== END DEBUG ===');
 
       // Save booking to database first

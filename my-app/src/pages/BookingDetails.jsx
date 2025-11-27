@@ -33,6 +33,20 @@ const BookingDetails = () => {
     const fetchBooking = async () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        
+        // First, try to verify payment status with Xendit (in case webhook hasn't arrived yet)
+        try {
+          console.log(`Verifying payment status for booking ${id}...`);
+          const verifyRes = await fetch(`${API_URL}/webhooks/xendit/verify/${id}`);
+          if (verifyRes.ok) {
+            const verifyResult = await verifyRes.json();
+            console.log('Payment verification result:', verifyResult);
+          }
+        } catch (verifyErr) {
+          console.warn('Payment verification failed (non-critical):', verifyErr);
+        }
+        
+        // Then fetch the booking details
         const res = await fetch(`${API_URL}/bookings/${id}`);
         if (!res.ok) {
           throw new Error('Failed to fetch booking details');
@@ -201,9 +215,14 @@ const BookingDetails = () => {
               </button>
             </>
           ) : (
-            <p className="text-sm text-[#bbb] text-center">
-              QR code is not available yet. Please check again later or contact support.
-            </p>
+            <div className="text-center">
+              <p className="text-sm text-[#bbb] mb-2">
+                Appointment QR Code
+              </p>
+              <p className="text-sm text-[#999]">
+                QR code is not available yet. Please check again later or contact support.
+              </p>
+            </div>
           )}
         </div>
       </div>

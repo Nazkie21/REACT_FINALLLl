@@ -331,13 +331,17 @@ export const createBooking = async (req, res) => {
     // Insert booking (let database auto-generate booking_id)
     const result = await query(
       `INSERT INTO bookings 
-       (booking_reference, user_id, service_id, instructor_id, 
-        booking_date, start_time, end_time, duration_minutes, status, 
+       (booking_reference, user_id, customer_name, customer_email, customer_contact, customer_address, 
+        service_id, instructor_id, booking_date, start_time, end_time, duration_minutes, status, 
         qr_code, user_notes, created_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         `REF-${Date.now()}`,
         userId,
+        name || null,
+        email || null,
+        contact || null,
+        address || null,
         serviceId,
         instructor_id || null,
         bookingDate,
@@ -408,7 +412,18 @@ export const createBooking = async (req, res) => {
           paymentUrl = invoiceResult.data.invoice_url;
           invoiceCreated = true;
           
-          // Store invoice reference
+          // Store invoice reference in bookings table
+          try {
+            await query(
+              'UPDATE bookings SET xendit_invoice_id = ? WHERE booking_id = ?',
+              [invoiceResult.data.id, bookingId]
+            );
+            console.log(`Stored Xendit invoice ID ${invoiceResult.data.id} for booking ${bookingId}`);
+          } catch (invoiceErr) {
+            console.warn('Could not store invoice ID:', invoiceErr.message);
+          }
+          
+          // Also store in transactions table
           try {
             await query(
               'INSERT INTO transactions (transaction_reference, booking_id, user_id, amount, payment_method, status) VALUES (?, ?, ?, ?, ?, "pending")',
@@ -527,6 +542,8 @@ export const getUserBookings = async (req, res) => {
 export const getBookingById = async (req, res) => {
   try {
     const { bookingId } = req.params;
+    
+    console.log(`Fetching booking with ID: ${bookingId}`);
 
     const bookings = await query(
       `SELECT 
@@ -538,8 +555,14 @@ export const getBookingById = async (req, res) => {
          b.status,
          b.payment_status,
          b.qr_code,
+         b.qr_code_path,
+         b.qr_code_data,
          b.user_notes,
          b.created_at,
+         b.customer_name,
+         b.customer_email,
+         b.customer_contact,
+         b.customer_address,
          u.first_name,
          u.last_name,
          u.email,
@@ -554,7 +577,10 @@ export const getBookingById = async (req, res) => {
       [bookingId]
     );
 
+    console.log(`Query result for booking ${bookingId}:`, bookings ? `Found ${bookings.length} booking(s)` : 'No result');
+
     if (!bookings || bookings.length === 0) {
+      console.warn(`Booking ${bookingId} not found in database`);
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
@@ -571,7 +597,7 @@ export const getBookingById = async (req, res) => {
           booking_id: booking.booking_id,
           booking_date: booking.booking_date,
           booking_time: booking.start_time,
-          service_type: booking.service_type || booking.instrument,
+          service_type: booking.service_name || booking.instrument,
         });
         if (qrResult && qrResult.success) {
           await query(
@@ -596,13 +622,27 @@ export const getBookingById = async (req, res) => {
       notes = {};
     }
 
-    const serviceKey = notes.original_service || booking.instrument || null;
-    const hours = booking.duration_minutes ? booking.duration_minutes / 60 : 1;
-    const totalPrice = serviceKey ? calculateAmount(serviceKey, hours) : 0;
+    const serviceKey = notes.original_service || booking.instrument || booking.service_name || null;
+    const hours = booking.duration_minutes ? Math.ceil(booking.duration_minutes / 60) : 1;
+    let totalPrice = 0;
+    
+    try {
+      totalPrice = serviceKey ? calculateAmount(serviceKey, hours) : 0;
+    } catch (calcErr) {
+      console.warn(`Warning: Could not calculate price for service ${serviceKey}:`, calcErr.message);
+      totalPrice = 0;
+    }
 
-    const fullName = (booking.first_name || booking.last_name)
-      ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
-      : null;
+    // Use customer_name from bookings table, fallback to user name if needed
+    const fullName = booking.customer_name 
+      ? booking.customer_name 
+      : (booking.first_name || booking.last_name)
+        ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
+        : null;
+
+    // Use customer contact info from bookings table, fallback to user info if needed
+    const email = booking.customer_email || booking.email || null;
+    const contact = booking.customer_contact || booking.contact || null;
 
     const bookingDateStr = booking.booking_date instanceof Date
       ? booking.booking_date.toISOString().split('T')[0]
@@ -613,8 +653,8 @@ export const getBookingById = async (req, res) => {
       data: {
         booking_id: booking.booking_id,
         name: fullName,
-        email: booking.email,
-        contact: booking.contact,
+        email: email,
+        contact: contact,
         service_type: serviceKey,
         booking_date: bookingDateStr,
         booking_time: booking.start_time,
@@ -628,9 +668,11 @@ export const getBookingById = async (req, res) => {
     });
   } catch (error) {
     console.error('Get booking by ID error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch booking'
+      message: 'Failed to fetch booking',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -1199,6 +1241,92 @@ export const rescheduleBooking = async (req, res) => {
 
   } catch (error) {
     console.error('Error rescheduling booking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Manual payment confirmation (for testing/admin)
+ * POST /api/bookings/:bookingId/confirm-payment
+ */
+export const confirmPayment = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    
+    console.log(`Manually confirming payment for booking ${bookingId}`);
+    
+    // Get booking details
+    const bookings = await query(
+      'SELECT * FROM bookings WHERE booking_id = ?',
+      [bookingId]
+    );
+    
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+    
+    const booking = bookings[0];
+    
+    // Update payment status to paid
+    await query(
+      'UPDATE bookings SET payment_status = "paid", status = "confirmed", updated_at = NOW() WHERE booking_id = ?',
+      [bookingId]
+    );
+    
+    // Generate QR code if not already present
+    if (!booking.qr_code_data && qrService && typeof qrService.generateBookingQR === 'function') {
+      try {
+        console.log(`Generating QR code for booking ${bookingId}...`);
+        const hours = booking.duration_minutes ? Math.ceil(booking.duration_minutes / 60) : 1;
+        
+        // Parse notes to get service type
+        let serviceType = 'Studio Session';
+        try {
+          const bookingNotes = booking.user_notes ? JSON.parse(booking.user_notes) : {};
+          serviceType = bookingNotes.original_service || 'Studio Session';
+        } catch (e) {
+          // Use default if parsing fails
+        }
+        
+        const qrResult = await qrService.generateBookingQR({
+          name: booking.customer_name || 'Guest',
+          service_type: serviceType,
+          booking_date: booking.booking_date,
+          booking_time: booking.start_time,
+          hours: hours
+        }, bookingId);
+        
+        if (qrResult && qrResult.success) {
+          await query(
+            'UPDATE bookings SET qr_code_path = ?, qr_code_data = ? WHERE booking_id = ?',
+            [qrResult.qrPath, qrResult.qrDataUrl, bookingId]
+          );
+          console.log(`✅ QR code generated successfully for booking ${bookingId}`);
+        } else {
+          console.warn(`❌ QR generation failed for booking ${bookingId}:`, qrResult?.error);
+        }
+      } catch (qrErr) {
+        console.error('❌ QR generation error:', qrErr.message);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Payment confirmed successfully',
+      data: {
+        booking_id: bookingId,
+        payment_status: 'paid',
+        status: 'confirmed'
+      }
+    });
+  } catch (error) {
+    console.error('Error confirming payment:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

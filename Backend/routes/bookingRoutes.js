@@ -11,7 +11,8 @@ import {
   getBooking,
   updatePaymentStatus,
   cancelBooking,
-  rescheduleBooking
+  rescheduleBooking,
+  confirmPayment
 } from '../controllers/bookingController.js';
 
 const router = express.Router();
@@ -30,8 +31,8 @@ router.get('/available-slots-v2', getAvailableSlotsV2);
 // Get user's bookings (requires auth) - SPECIFIC ROUTE
 router.get('/user/my-bookings', requireAuth, getUserBookings);
 
-// Create new booking (optional auth - supports guest bookings)
-router.post('/create', optionalAuth, createBooking);
+// Create new booking (REQUIRES AUTH - user must be logged in)
+router.post('/create', requireAuth, createBooking);
 
 // Update payment status (optional - for webhook)
 router.post('/update-payment', updatePaymentStatus);
@@ -41,6 +42,9 @@ router.post('/:bookingId/cancel', cancelBooking);
 
 // Reschedule a booking (requires auth or token)
 router.post('/:bookingId/reschedule', rescheduleBooking);
+
+// Confirm payment manually (for testing/admin)
+router.post('/:bookingId/confirm-payment', confirmPayment);
 
 // Get specific booking by ID (public - no auth required for returning from payment) - CATCH-ALL LAST
 router.get('/:bookingId', getBookingById);

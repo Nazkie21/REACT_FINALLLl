@@ -86,9 +86,11 @@ async function handlePaymentSuccess(event) {
     console.log(`Found booking ${booking.id} for ${booking.name}`);
 
     // Update booking payment status and store payment reference
+    // Also update booking status to 'confirmed' when payment is successful
     await query(
       `UPDATE bookings 
        SET payment_status = 'paid', 
+           status = 'confirmed',
            xendit_payment_id = ?,
            xendit_invoice_id = ?,
            updated_at = NOW()
@@ -104,11 +106,23 @@ async function handlePaymentSuccess(event) {
     if (!qrDataUrl && qrService && qrService.generateBookingQR) {
       console.log(`🔄 Generating QR code for booking ${externalId}...`);
       try {
+        const hours = booking.duration_minutes ? Math.ceil(booking.duration_minutes / 60) : 1;
+        
+        // Parse notes to get service type
+        let serviceType = 'Studio Session';
+        try {
+          const bookingNotes = booking.user_notes ? JSON.parse(booking.user_notes) : {};
+          serviceType = bookingNotes.original_service || 'Studio Session';
+        } catch (e) {
+          // Use default if parsing fails
+        }
+        
         const qrResult = await qrService.generateBookingQR({
-          name: booking.name,
+          name: booking.customer_name || 'Guest',
+          service_type: serviceType,
           booking_date: booking.booking_date,
-          booking_time: booking.booking_time,
-          hours: booking.hours
+          booking_time: booking.start_time,
+          hours: hours
         }, booking.booking_id);
         
         if (qrResult.success) {
@@ -265,9 +279,9 @@ export const verifyPaymentStatus = async (req, res) => {
       const invoiceStatus = await getInvoiceStatus(booking.xendit_invoice_id);
       
       if (invoiceStatus.success && invoiceStatus.data.status === 'PAID') {
-        // Update booking status to paid
+        // Update booking status to paid and confirmed
         await query(
-          'UPDATE bookings SET payment_status = "paid", updated_at = NOW() WHERE booking_id = ?',
+          'UPDATE bookings SET payment_status = "paid", status = "confirmed", updated_at = NOW() WHERE booking_id = ?',
           [bookingId]
         );
         
@@ -278,6 +292,44 @@ export const verifyPaymentStatus = async (req, res) => {
         );
         
         const updatedBooking = Array.isArray(updatedResults) ? updatedResults[0] : updatedResults;
+        
+        // Generate QR code if not already present
+        if (!updatedBooking.qr_code_data && qrService && typeof qrService.generateBookingQR === 'function') {
+          try {
+            console.log(`🔄 Generating QR code for verified booking ${bookingId}...`);
+            const hours = updatedBooking.duration_minutes ? Math.ceil(updatedBooking.duration_minutes / 60) : 1;
+            // Parse notes to get service type
+            let serviceType = 'Studio Session';
+            try {
+              const bookingNotes = updatedBooking.user_notes ? JSON.parse(updatedBooking.user_notes) : {};
+              serviceType = bookingNotes.original_service || 'Studio Session';
+            } catch (e) {
+              // Use default if parsing fails
+            }
+            
+            const qrResult = await qrService.generateBookingQR({
+              name: updatedBooking.customer_name || 'Guest',
+              service_type: serviceType,
+              booking_date: updatedBooking.booking_date,
+              booking_time: updatedBooking.start_time,
+              hours: hours
+            }, bookingId);
+            
+            if (qrResult && qrResult.success) {
+              await query(
+                'UPDATE bookings SET qr_code_path = ?, qr_code_data = ? WHERE booking_id = ?',
+                [qrResult.qrPath, qrResult.qrDataUrl, bookingId]
+              );
+              updatedBooking.qr_code_path = qrResult.qrPath;
+              updatedBooking.qr_code_data = qrResult.qrDataUrl;
+              console.log(`✅ QR code generated for verified booking ${bookingId}`);
+            } else {
+              console.warn(`❌ QR generation failed for booking ${bookingId}:`, qrResult?.error);
+            }
+          } catch (qrErr) {
+            console.error('❌ QR generation error:', qrErr.message);
+          }
+        }
         
         return res.json({
           success: true,

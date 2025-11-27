@@ -84,10 +84,17 @@ export const requireAuth = async (req, res, next) => {
     );
 
     if (!users || users.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      // User not found in database, but token is valid
+      // Attach minimal user info from token for guest/fallback handling
+      console.warn(`User ID ${decoded.id} from token not found in database`);
+      req.user = {
+        id: decoded.id,
+        username: decoded.username,
+        email: decoded.email,
+        role: decoded.role || 'student',
+        is_verified: false
+      };
+      return next();
     }
 
     const user = users[0];

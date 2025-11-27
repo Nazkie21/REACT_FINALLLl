@@ -163,7 +163,7 @@ CREATE TABLE instructor_availability (
 
 -- =====================================================
 -- 6. BOOKINGS TABLE
--- Core booking/scheduling table
+-- Core booking/scheduling table with complete payment & QR code support
 -- =====================================================
 CREATE TABLE bookings (
     booking_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -174,17 +174,29 @@ CREATE TABLE bookings (
     instructor_id INTEGER,
     service_id INTEGER NOT NULL,
     
+    -- Customer Information (from booking form)
+    customer_name VARCHAR(255),
+    customer_email VARCHAR(255),
+    customer_contact VARCHAR(20),
+    customer_address TEXT,
+    
     -- Schedule Information
     booking_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     duration_minutes INTEGER NOT NULL,
     
+    -- Service Details
+    service_type VARCHAR(50),
+    service_name VARCHAR(255),
+    
     -- Status
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     
     -- Check-in Information
     qr_code VARCHAR(500),
+    qr_code_path VARCHAR(500),
+    qr_code_data LONGTEXT,
     checked_in BOOLEAN DEFAULT FALSE,
     checked_in_at TIMESTAMP NULL,
     
@@ -203,10 +215,16 @@ CREATE TABLE bookings (
     -- User Notes
     user_notes TEXT,
     
+    -- Additional Booking Details
+    number_of_people INT DEFAULT 1,
+    special_requests TEXT,
+    
     -- Payment Information
     payment_status VARCHAR(20) DEFAULT 'pending',
+    total_amount DECIMAL(10, 2),
     xendit_payment_id VARCHAR(255),
     xendit_invoice_id VARCHAR(255),
+    paid_at TIMESTAMP NULL,
     
     -- Tracking
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -226,8 +244,10 @@ CREATE TABLE bookings (
     INDEX idx_bookings_date (booking_date),
     INDEX idx_bookings_status (status),
     INDEX idx_bookings_reference (booking_reference),
+    INDEX idx_bookings_payment_status (payment_status),
+    INDEX idx_bookings_customer_email (customer_email),
     
-    CONSTRAINT chk_status CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled', 'no_show')),
+    CONSTRAINT chk_status CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'pending_payment')),
     CONSTRAINT chk_payment_status CHECK (payment_status IN ('pending', 'paid', 'expired', 'failed'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -784,6 +804,18 @@ CREATE TABLE system_settings (
     CONSTRAINT chk_setting_type CHECK (setting_type IN ('string', 'integer', 'boolean', 'json'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+-- =====================================================
+-- SEED DATA - SERVICES
+-- =====================================================
+
+-- Insert booking services
+INSERT INTO services (service_name, description, instrument, duration_minutes, price, is_active) VALUES
+('Music Lessons', 'One-on-one music instruction', 'music_lesson', 60, 500.00, TRUE),
+('Recording', 'Professional recording session', 'recording', 60, 1500.00, TRUE),
+('Mixing', 'Audio mixing and mastering', 'mixing', 60, 1200.00, TRUE),
+('Band Rehearsal', 'Band practice and rehearsal space', 'band_rehearsal', 60, 800.00, TRUE),
+('Production', 'Music production and arrangement', 'production', 60, 2000.00, TRUE);
 
 -- =====================================================
 -- SAMPLE DATA INSERTS - COMMENTED OUT

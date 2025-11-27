@@ -36,13 +36,19 @@ class QRCodeService {
    */
   async generateBookingQR(bookingData, bookingId) {
     try {
+      // Calculate expiration date (30 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      
       // Create QR code data object
       const qrData = {
         bookingId: bookingId,
         name: bookingData.name,
+        serviceType: bookingData.service_type || bookingData.service_name || 'Studio Session',
         date: bookingData.booking_date,
         time: bookingData.booking_time,
         hours: bookingData.hours,
+        expiresAt: expiresAt.toISOString().split('T')[0],
         checkInCode: this.generateCheckInCode(bookingId)
       };
 

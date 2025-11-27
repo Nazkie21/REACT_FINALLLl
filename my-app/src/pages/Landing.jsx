@@ -63,6 +63,8 @@ export default function Landing() {
   })
   const [contactFormError, setContactFormError] = useState('')
   const [contactFormSuccess, setContactFormSuccess] = useState(false)
+  // Login modal state for non-authenticated users
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   useEffect(() => {
     const handleURLParams = async () => {
@@ -519,8 +521,8 @@ export default function Landing() {
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (!token) {
-      // User not logged in, redirect to login
-      window.location.href = '/auth/login';
+      // User not logged in, show login modal
+      setShowLoginModal(true);
       return;
     }
     
@@ -546,6 +548,7 @@ export default function Landing() {
     }
     
     // Save mini-booking data to localStorage for auto-fill on booking page
+    // Include the name entered by user
     localStorage.setItem('miniBookingData', JSON.stringify({
       name: miniBooking.name,
       service: miniBooking.service,

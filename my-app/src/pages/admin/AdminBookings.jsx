@@ -1001,14 +1001,8 @@ const AdminBookings = () => {
                   </>
                 ) : (
                   <div className="text-center">
-                    <p className="text-gray-400 text-lg font-semibold mb-2">No QR Code</p>
-                    <p className="text-gray-500 text-sm">QR code will be generated when payment is confirmed</p>
-                    <button 
-                      onClick={() => handleCompleteBooking(selectedBooking.id)}
-                      className="mt-4 px-4 py-2 bg-[#bfa45b] text-white rounded-lg hover:bg-[#ffb400] transition text-sm font-semibold"
-                    >
-                      Generate QR Code
-                    </button>
+                    <p className="text-gray-400 text-lg font-semibold mb-2">Appointment QR Code</p>
+                    <p className="text-gray-500 text-sm">QR code is not available yet. Please check again later or contact support.</p>
                   </div>
                 )}
               </div>

@@ -120,17 +120,18 @@ export const getBookingReport = async (req, res) => {
 
     let sql = `
       SELECT 
-        b.id as booking_id,
         b.booking_id,
         CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as client_name,
-        b.service_type,
+        s.service_name,
         b.status,
         b.payment_status,
-        b.amount,
+        COALESCE(t.amount, 0) as amount,
         b.created_at,
         b.user_id
       FROM bookings b
       LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN services s ON b.service_id = s.service_id
+      LEFT JOIN transactions t ON b.booking_id = t.booking_id
       WHERE 1=1
     `;
     const params = [];
@@ -146,10 +147,6 @@ export const getBookingReport = async (req, res) => {
     if (student_id) {
       sql += ' AND b.user_id = ?';
       params.push(student_id);
-    }
-    if (service_type) {
-      sql += ' AND b.service_type = ?';
-      params.push(service_type);
     }
     if (status) {
       sql += ' AND b.status = ?';
@@ -1009,4 +1006,3 @@ export const getTodaysSchedule = async (req, res) => {
     });
   }
 };
-
