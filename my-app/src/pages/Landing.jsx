@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import { FaInstagram, FaFacebook, FaTiktok, FaBell } from "react-icons/fa";
 import { CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
 import useRealtimeNotifications from '../hooks/useRealtimeNotifications';
+import LoginModal from '../components/LoginModal';
 
 import {
   gallery1,
@@ -68,6 +69,7 @@ export default function Landing() {
   const [contactFormSuccess, setContactFormSuccess] = useState(false)
   // Login modal state for non-authenticated users
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const loginButtonRef = useRef(null)
 
   useEffect(() => {
     const handleURLParams = async () => {
@@ -613,13 +615,14 @@ export default function Landing() {
       
       {/* Header */}
       <header className="w-full sticky top-0 z-50 bg-[#1b1b1b] shadow-md border-b border-[#444]">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 py-2">
-          <a href="/" className="flex items-center z-10">
+        <div className="w-full flex items-center px-4 py-2 relative">
+          {/* Logo - Far Left */}
+          <a href="/" className="flex items-center z-10 flex-shrink-0">
             <img src={logo} alt="MixLab Logo" className="h-20 transition-transform hover:scale-105"/>
           </a>
 
-          {/* Navigation */}
-          <nav className="hidden lg:flex flex-1 justify-center">
+          {/* Navigation - Absolutely Centered */}
+          <nav className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2">
             <ul className="flex items-center gap-5">
               <li><a href="#about" className="px-3 py-2 rounded hover:bg-white/5 transition">About</a></li>
               <li className="relative group">
@@ -639,8 +642,8 @@ export default function Landing() {
             </ul>
           </nav>
 
-          {/* User Actions */}
-          <div className="hidden lg:flex items-center gap-4 z-10 relative">
+          {/* User Actions - Far Right */}
+          <div className="hidden lg:flex items-center gap-4 z-10 relative flex-shrink-0 ml-auto">
             {user && (
               <button 
                 onClick={() => setShowNotificationPanel(!showNotificationPanel)}
@@ -664,7 +667,7 @@ export default function Landing() {
                 </span>
               </a>
             ) : (
-              <a href="/auth/login" className="px-4 py-2 bg-[#ffd700] hover:bg-[#ffe44c] text-black rounded-lg transition font-semibold shadow-lg">Log in</a>
+              <button ref={loginButtonRef} onClick={() => setShowLoginModal(!showLoginModal)} className="px-4 py-2 bg-[#ffd700] hover:bg-[#ffe44c] text-black rounded-lg transition font-semibold shadow-lg">Log in</button>
             )}
           </div>
 
@@ -781,13 +784,15 @@ export default function Landing() {
                         </div>
                       </a>
                     ) : (
-                      <a 
-                        href="/auth/login" 
-                        className="block text-center px-4 py-3 bg-[#ffd700] text-black font-semibold rounded-lg hover:bg-[#ffe44c] transition shadow-lg" 
-                        onClick={() => setMobileMenuOpen(false)}
+                      <button
+                        onClick={() => {
+                          setShowLoginModal(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="block text-center w-full px-4 py-3 bg-[#ffd700] text-black font-semibold rounded-lg hover:bg-[#ffe44c] transition shadow-lg"
                       >
                         Log in
-                      </a>
+                      </button>
                     )}
                   </div>
                 </nav>
@@ -1414,6 +1419,9 @@ export default function Landing() {
           </div>
         </>
       )}
+
+      {/* Login Modal */}
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} buttonRef={loginButtonRef.current} />
     </div>
   )
 }
