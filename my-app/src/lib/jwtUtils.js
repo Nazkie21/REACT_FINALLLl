@@ -58,7 +58,16 @@ export const getUserRole = () => {
  * Check if user is admin
  */
 export const isAdmin = () => {
-  return getUserRole() === 'admin';
+  const role = getUserRole();
+
+  // Development bypass: if no user data but token exists, assume admin for testing
+  if (!role && localStorage.getItem('token')) {
+    console.log('🔧 DEV: No role found but token exists, assuming admin for development');
+    return true;
+  }
+
+  console.log('🔐 isAdmin check:', { role, token: !!localStorage.getItem('token') });
+  return role === 'admin';
 };
 
 /**

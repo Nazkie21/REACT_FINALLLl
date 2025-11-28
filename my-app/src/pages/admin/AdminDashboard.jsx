@@ -147,6 +147,10 @@ const chartOptions = (titleText) => ({
 // --- Main Component ---
 
 const AdminDashboard = () => {
+  console.log('🔧 AdminDashboard component mounting...');
+  console.log('🔑 Token exists:', !!localStorage.getItem('token'));
+  console.log('👤 User data:', localStorage.getItem('user'));
+
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -180,6 +184,8 @@ const AdminDashboard = () => {
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
   const [showAddModuleModal, setShowAddModuleModal] = useState(false);
   const [showAddLessonModal, setShowAddLessonModal] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+  const [selectedBookingDetails, setSelectedBookingDetails] = useState(null);
   
   // Form states for modals
   const [appointmentForm, setAppointmentForm] = useState({
@@ -1516,13 +1522,22 @@ const AdminDashboard = () => {
               </div>
               {isLoadingCharts && <span className="text-xs text-[#bfa45b]">Updating...</span>}
             </div>
-            {revenueChartData && (
+            {revenueChartData ? (
               <div className="h-64 md:h-80">
                 <Line 
                   ref={revenueChartRef}
                   data={revenueChartData} 
                   options={chartOptions('Revenue')}
                 />
+              </div>
+            ) : (
+              <div className="h-64 md:h-80 flex items-center justify-center bg-[#1b1b1b] rounded-lg">
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm mb-2">Loading revenue data...</p>
+                  <div className="inline-block animate-spin">
+                    <div className="w-6 h-6 border-2 border-[#bfa45b] border-t-transparent rounded-full"></div>
+                  </div>
+                </div>
               </div>
             )}
             <div className="mt-3 md:mt-4 grid grid-cols-3 gap-2 md:gap-4 text-center">
@@ -1686,7 +1701,8 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex gap-2">
                         <button 
-                          className="px-3 py-1 text-xs bg-[#ffd700] text-[#1b1b1b] rounded hover:bg-[#ffed4e] transition font-semibold"
+                          onClick={() => setSelectedUserDetails(notif)}
+                          className="px-3 py-1 text-xs bg-[#ffd700] text-[#1b1b1b] rounded hover:bg-[#ffed4e] transition font-semibold cursor-pointer"
                           title="View User"
                         >
                           View
@@ -1758,7 +1774,7 @@ const AdminDashboard = () => {
                           </td>
                           <td className="p-3 text-right">
                             <div className="flex justify-end gap-2">
-                              <button className="px-2 py-1 text-xs bg-[#bfa45b] text-[#1b1b1b] rounded hover:bg-[#cfb86b] transition duration-200 font-semibold" title="View Details">Details</button>
+                              <button onClick={() => setSelectedBookingDetails(booking)} className="px-2 py-1 text-xs bg-[#bfa45b] text-[#1b1b1b] rounded hover:bg-[#cfb86b] transition duration-200 font-semibold cursor-pointer" title="View Details">Details</button>
                               <button className="px-2 py-1 text-xs bg-[#2a2a2a] border border-[#444] text-gray-300 rounded hover:border-[#bfa45b] hover:text-[#bfa45b] transition duration-200" title="Edit">Edit</button>
                               <button className="px-2 py-1 text-xs bg-[#2a2a2a] border border-[#444] text-gray-300 rounded hover:border-[#bfa45b] hover:text-[#bfa45b] transition duration-200" title="Reschedule">Reschedule</button>
                               <button className="px-2 py-1 text-xs bg-[#2a2a2a] border border-[#444] text-red-400 rounded hover:border-red-500 hover:bg-red-900/30 transition duration-200" title="Cancel">Cancel</button>
@@ -1787,6 +1803,136 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* User Details Modal */}
+      {selectedUserDetails && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#232323] border border-[#444] rounded-2xl max-w-md w-full p-6" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">User Details</h2>
+              <button
+                onClick={() => setSelectedUserDetails(null)}
+                className="text-[#bbb] hover:text-[#ffd700] text-2xl transition"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Full Name</p>
+                <p className="text-lg font-semibold text-[#ffd700]">{selectedUserDetails.name || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Email</p>
+                <p className="text-sm text-white break-all">{selectedUserDetails.email || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">User ID</p>
+                <p className="text-sm text-white">{selectedUserDetails.id || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Registration Date</p>
+                <p className="text-sm text-white">
+                  {new Date(selectedUserDetails.created_at || new Date()).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Role</p>
+                <p className="text-sm text-white capitalize">{selectedUserDetails.role || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => setSelectedUserDetails(null)}
+                className="px-4 py-2 bg-[#1b1b1b] border border-[#444] hover:border-[#bfa45b] text-white rounded-lg font-semibold transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/admin/users');
+                  setSelectedUserDetails(null);
+                }}
+                className="px-4 py-2 bg-[#bfa45b] hover:bg-[#cfb86b] text-[#1b1b1b] rounded-lg font-semibold transition-colors"
+              >
+                View Full Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Details Modal */}
+      {selectedBookingDetails && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#232323] border border-[#444] rounded-2xl max-w-md w-full p-6" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Booking Details</h2>
+              <button
+                onClick={() => setSelectedBookingDetails(null)}
+                className="text-[#bbb] hover:text-[#ffd700] text-2xl transition"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Student Name</p>
+                <p className="text-lg font-semibold text-[#ffd700]">{selectedBookingDetails.customer_name || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Service</p>
+                <p className="text-sm text-white">{selectedBookingDetails.service_type || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Date & Time</p>
+                <p className="text-sm text-white">{selectedBookingDetails.start_time || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Instructor</p>
+                <p className="text-sm text-white">{selectedBookingDetails.instructor_name || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-1">Status</p>
+                <p className="text-sm text-white capitalize">{selectedBookingDetails.status || 'N/A'}</p>
+              </div>
+
+              <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#444]">
+                <p className="text-xs text-gray-400 mb-2">QR Code</p>
+                <div className="bg-white p-3 rounded flex items-center justify-center">
+                  <p className="text-xs text-gray-600 text-center">QR Code for Booking ID</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => setSelectedBookingDetails(null)}
+                className="px-4 py-2 bg-[#1b1b1b] border border-[#444] hover:border-[#bfa45b] text-white rounded-lg font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Appointment Modal */}
       {showAddAppointmentModal && (

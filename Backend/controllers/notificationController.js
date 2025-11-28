@@ -52,6 +52,8 @@ export const getAdminNotifications = async (req, res) => {
   try {
     const userId = req.user?.id;
     const userRole = req.user?.role;
+
+    console.log('📡 Admin notifications request:', { userId, userRole, hasUser: !!req.user });
     const limit = parseInt(req.query.limit) || 10;
 
     console.log('getAdminNotifications - User ID:', userId, 'Role:', userRole);
@@ -67,10 +69,10 @@ export const getAdminNotifications = async (req, res) => {
 
     // Get system-wide admin notifications (only admin-specific notification types)
     const adminNotificationTypes = [
-      'booking_received',
-      'booking_confirmation',
-      'booking_rescheduled',
+      'booking_created',
+      'booking_confirmed',
       'booking_cancelled',
+      'booking_rescheduled',
       'payment_received',
       'payment_reminder',
       'payment_overdue'

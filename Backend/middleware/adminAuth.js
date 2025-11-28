@@ -19,6 +19,7 @@ export const requireAdmin = async (req, res, next) => {
     if (!token) {
       // Check environment - if in development, create a default test admin user
       if (process.env.NODE_ENV !== 'production') {
+        console.log('🔧 DEV MODE: Creating test admin user (no database check)');
         req.user = {
           id: 999,
           username: 'dev-admin',
@@ -27,7 +28,7 @@ export const requireAdmin = async (req, res, next) => {
         };
         return next();
       }
-      
+
       return res.status(401).json({
         success: false,
         message: 'Authentication required. Please login.'
@@ -41,6 +42,18 @@ export const requireAdmin = async (req, res, next) => {
         success: false,
         message: 'Invalid or expired token. Please login again.'
       });
+    }
+
+    // Special handling for development admin user
+    if (process.env.NODE_ENV !== 'production' && decoded.id === 999) {
+      console.log('🔧 DEV MODE: Using development admin user');
+      req.user = {
+        id: 999,
+        username: 'dev-admin',
+        email: 'admin@dev.local',
+        role: 'admin'
+      };
+      return next();
     }
 
     // Check if user exists and has admin/instructor role

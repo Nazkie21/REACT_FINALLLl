@@ -13,87 +13,136 @@ let socket = null;
  */
 export const useRealtimeNotifications = (isAdmin = false, onNewNotification = null) => {
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.warn('No auth token available for real-time notifications');
-      return;
-    }
+    let currentToken = localStorage.getItem('token');
+    let socketInstance = null;
 
-    // Create a single shared Socket.io client per browser tab
-    if (!socket) {
-      socket = io('http://localhost:5000', {
-        auth: {
-          token
-        },
+    const connectSocket = (token) => {
+      if (!token) return;
+
+      // Disconnect existing socket if it exists
+      if (socketInstance && socketInstance.connected) {
+        socketInstance.disconnect();
+      }
+
+      // Create new socket connection
+      socketInstance = io('http://localhost:5000', {
+        auth: { token },
         reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: 5
+        reconnectionDelay: 500,
+        reconnectionDelayMax: 3000,
+        reconnectionAttempts: 10,
+        transports: ['websocket', 'polling']
       });
-    } else {
-      // Ensure the client is connected
-      if (!socket.connected) {
-        socket.connect();
+
+      // Set up event handlers
+      const handleConnect = () => {
+        console.log('✅ Real-time notification connection established');
+        console.log('🔗 Socket ID:', socketInstance.id);
+        console.log('👤 Is admin?', isAdmin);
+
+        if (isAdmin) {
+          console.log('🔧 Joining admin-notifications room...');
+          socketInstance.emit('join-admin-notifications');
+        } else {
+          console.log('👤 User is not admin, skipping admin room join');
+        }
+      };
+
+      const handleNewNotification = (notification) => {
+        console.log('🔔 Real-time notification received:', notification);
+        if (onNewNotification) {
+          console.log('📢 Calling onNewNotification callback');
+          onNewNotification(notification);
+        } else {
+          console.log('❌ Not calling callback - no handler provided');
+        }
+      };
+
+      const handleAdminNotification = (notification) => {
+        console.log('🔔 Admin notification received:', notification);
+        console.log('Is admin?', isAdmin, 'Has callback?', !!onNewNotification);
+        if (isAdmin && onNewNotification) {
+          console.log('📢 Calling onNewNotification callback for admin');
+          onNewNotification(notification);
+        } else {
+          console.log('❌ Not calling callback - isAdmin:', isAdmin, 'hasCallback:', !!onNewNotification);
+        }
+      };
+
+      const handleUserNotification = (notification) => {
+        console.log('🔔 User notification received:', notification);
+        if (!isAdmin && onNewNotification) {
+          onNewNotification(notification);
+        }
+      };
+
+      const handleConnectError = (error) => {
+        console.warn('Real-time notification connection error:', error.message);
+      };
+
+      const handleDisconnect = (reason) => {
+        console.log('Real-time notification disconnected:', reason);
+      };
+
+      // Register listeners
+      socketInstance.on('connect', handleConnect);
+      socketInstance.on('new-notification', handleNewNotification);
+      socketInstance.on('admin_notification', handleAdminNotification);
+      socketInstance.on('notification', handleUserNotification);
+      socketInstance.on('connect_error', handleConnectError);
+      socketInstance.on('disconnect', handleDisconnect);
+
+      // Store reference globally for cleanup
+      socket = socketInstance;
+    };
+
+    const checkTokenAndConnect = () => {
+      const newToken = localStorage.getItem('token');
+
+      // If token changed, reconnect
+      if (newToken !== currentToken) {
+        currentToken = newToken;
+
+        if (newToken) {
+          console.log('🔑 Token found, connecting to real-time notifications');
+          connectSocket(newToken);
+        } else {
+          console.log('🔒 No token, disconnecting real-time notifications');
+          if (socketInstance && socketInstance.connected) {
+            socketInstance.disconnect();
+          }
+        }
       }
-    }
+    };
 
-    // Handlers are defined here so we can remove them cleanly in cleanup
-    const handleConnect = () => {
-      console.log('Real-time notification connection established');
-      
-      // Emit event to join admin notification room if admin
-      if (isAdmin) {
-        socket.emit('join-admin-notifications');
+    // Initial connection attempt
+    checkTokenAndConnect();
+
+    // Listen for storage changes (login/logout)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        checkTokenAndConnect();
       }
     };
 
-    const handleNewNotification = (notification) => {
-      console.log('Real-time notification received:', notification);
-      if (onNewNotification) {
-        onNewNotification(notification);
-      }
-    };
+    window.addEventListener('storage', handleStorageChange);
 
-    const handleAdminNotification = (notification) => {
-      console.log('Admin notification received:', notification);
-      if (isAdmin && onNewNotification) {
-        onNewNotification(notification);
-      }
-    };
+    // Also poll for token changes every 2 seconds (in case storage event doesn't fire)
+    const tokenCheckInterval = setInterval(checkTokenAndConnect, 2000);
 
-    const handleUserNotification = (notification) => {
-      console.log('Notification received:', notification);
-      if (!isAdmin && onNewNotification) {
-        onNewNotification(notification);
-      }
-    };
-
-    const handleConnectError = (error) => {
-      console.warn('Real-time notification connection error:', error.message);
-      // Fall back to polling - already handled by useNotifications hook
-    };
-
-    const handleDisconnect = (reason) => {
-      console.log('Real-time notification disconnected:', reason);
-    };
-
-    // Register listeners
-    socket.on('connect', handleConnect);
-    socket.on('new-notification', handleNewNotification);
-    socket.on('admin_notification', handleAdminNotification);
-    socket.on('notification', handleUserNotification);
-    socket.on('connect_error', handleConnectError);
-    socket.on('disconnect', handleDisconnect);
-
-    // Cleanup on unmount or when dependencies change: remove listeners only
+    // Cleanup
     return () => {
-      if (!socket) return;
-      socket.off('connect', handleConnect);
-      socket.off('new-notification', handleNewNotification);
-      socket.off('admin_notification', handleAdminNotification);
-      socket.off('notification', handleUserNotification);
-      socket.off('connect_error', handleConnectError);
-      socket.off('disconnect', handleDisconnect);
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(tokenCheckInterval);
+
+      if (socketInstance) {
+        socketInstance.off('connect');
+        socketInstance.off('new-notification');
+        socketInstance.off('admin_notification');
+        socketInstance.off('notification');
+        socketInstance.off('connect_error');
+        socketInstance.off('disconnect');
+      }
     };
   }, [isAdmin, onNewNotification]);
 

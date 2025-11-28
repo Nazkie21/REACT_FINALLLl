@@ -9,8 +9,9 @@ const API_BASE_URL = 'http://localhost:5000/api';
  * @returns {object} - { notifications, unreadCount, isLoading, error, markAsRead, markAllAsRead, refreshNotifications }
  */
 export const useNotifications = (isAdmin = false, refreshInterval = null) => {
-  // Use faster polling for admin notifications, slower for user notifications
-  const interval = refreshInterval !== null ? refreshInterval : (isAdmin ? 10000 : 30000);
+  // Use faster polling for both admin and user notifications
+  // Admin: 5 seconds, User: 8 seconds (faster for better real-time feel)
+  const interval = refreshInterval !== null ? refreshInterval : (isAdmin ? 5000 : 8000);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +34,8 @@ export const useNotifications = (isAdmin = false, refreshInterval = null) => {
         ? `${API_BASE_URL}/notifications/admin/system`
         : `${API_BASE_URL}/notifications`;
 
+      console.log('📡 Fetching notifications:', { isAdmin, endpoint, hasToken: !!token });
+
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
@@ -41,14 +44,25 @@ export const useNotifications = (isAdmin = false, refreshInterval = null) => {
         }
       });
 
+      console.log('🔗 Response status:', response.status, response.statusText);
+
       if (!response.ok) {
+        console.error('❌ Notification fetch failed:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error details:', errorText);
         throw new Error(`Failed to fetch notifications: ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('📦 Notification response:', result);
+
       const notificationsData = result.data?.notifications || [];
+      const unreadCountData = result.data?.unreadCount || 0;
+
+      console.log('✅ Setting notifications:', { count: notificationsData.length, unread: unreadCountData });
+
       setNotifications(notificationsData);
-      setUnreadCount(result.data?.unreadCount || 0);
+      setUnreadCount(unreadCountData);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setError(error.message);

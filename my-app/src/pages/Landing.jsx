@@ -208,29 +208,15 @@ export default function Landing() {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('user')
-    
-    // Redirect admin users to admin dashboard
-    if (userData && token) {
-      try {
-        const parsedUser = JSON.parse(userData)
-        if (parsedUser.role === 'admin') {
-          navigate('/admin/dashboard', { replace: true })
-          return
-        }
-      } catch (e) {
-        console.error('Error parsing user data:', e)
-      }
-    }
-    
+
     // User data is already available from login response in localStorage
     // No need to fetch /auth/me
-    
+
     // Fetch notifications if user is logged in
     if (user && token) {
       fetchNotifications();
     }
-  }, [user, navigate])
+  }, [user])
 
   // Set up real-time notifications for logged-in user
   useRealtimeNotifications(false, () => {

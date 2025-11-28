@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isAuthenticated } from '../lib/jwtUtils'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import NotificationDropdown from '../components/NotificationDropdown'
 
 export default function Reservations() {
   const navigate = useNavigate()
@@ -229,12 +230,15 @@ export default function Reservations() {
       <header className="w-full sticky top-0 z-50 bg-[#1b1b1b] shadow-md border-b border-[#444]">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between px-4 py-4">
           <h1 className="text-2xl font-bold text-[#ffd700]">Reservations</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="px-4 py-2 bg-[#ffd700] hover:bg-[#ffe44c] text-black rounded-lg transition font-semibold"
-          >
-            Back to Home
-          </button>
+          <div className="flex items-center gap-3">
+            <NotificationDropdown isAdmin={false} />
+            <button
+              onClick={() => navigate('/')}
+              className="px-4 py-2 bg-[#ffd700] hover:bg-[#ffe44c] text-black rounded-lg transition font-semibold"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </header>
 

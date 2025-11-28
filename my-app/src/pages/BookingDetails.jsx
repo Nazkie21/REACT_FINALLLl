@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const StatusBadge = ({ paymentStatus }) => {
   const normalized = (paymentStatus || '').toLowerCase();
@@ -139,7 +140,10 @@ const BookingDetails = () => {
             <span className="text-xl">←</span>
             <span>Back to Home</span>
           </button>
-          <StatusBadge paymentStatus={booking.payment_status} />
+          <div className="flex items-center gap-3">
+            <NotificationDropdown isAdmin={false} />
+            <StatusBadge paymentStatus={booking.payment_status} />
+          </div>
         </div>
 
         <h1 className="text-3xl font-bold mb-4">Booking Details</h1>

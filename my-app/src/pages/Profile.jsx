@@ -4,6 +4,7 @@ import { ChevronLeft, Award, BookOpen, Flame, Zap, Crown, Trophy, Music, Gem, Ed
 import { FaRightFromBracket } from 'react-icons/fa6';
 import apiService from '../lib/apiService';
 import badge1Icon from '../assets/icons/badge1.png';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 export default function ProfileDashboard() {
   const navigate = useNavigate();
@@ -240,12 +241,15 @@ export default function ProfileDashboard() {
               <ChevronLeft size={20} />
             </button>
             <h1 className="text-2xl font-bold text-yellow-500">Profile</h1>
-            <button 
-              onClick={handleLogout}
-              className="ml-auto bg-transparent border-2 border-yellow-600 border-opacity-15 p-2 rounded-lg text-yellow-500 hover:border-opacity-25 transition flex items-center gap-1"
-            >
-              <FaRightFromBracket size={18} /> Logout
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <NotificationDropdown isAdmin={false} />
+              <button 
+                onClick={handleLogout}
+                className="bg-transparent border-2 border-yellow-600 border-opacity-15 p-2 rounded-lg text-yellow-500 hover:border-opacity-25 transition flex items-center gap-1"
+              >
+                <FaRightFromBracket size={18} /> Logout
+              </button>
+            </div>
           </div>
         </div>
       </header>

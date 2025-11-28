@@ -616,14 +616,13 @@ export const getRevenueTrend = async (req, res) => {
       });
     }
 
-    // Get booking revenue by date
+    // Get booking revenue by date (include all bookings, not just paid)
     const trendData = await query(
       `SELECT 
         DATE(booking_date) as date,
         COALESCE(SUM(total_amount), 0) as revenue
        FROM bookings
-       WHERE payment_status = 'paid'
-       AND DATE(booking_date) BETWEEN ? AND ?
+       WHERE DATE(booking_date) BETWEEN ? AND ?
        GROUP BY DATE(booking_date)
        ORDER BY date ASC`,
       [startDate, endDate]
@@ -923,6 +922,7 @@ export const getNewRegistrations = async (req, res) => {
 
     const registrations = await query(
       `SELECT 
+        id,
         CONCAT(first_name, ' ', COALESCE(last_name, '')) as name,
         email,
         created_at,

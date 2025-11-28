@@ -8,8 +8,8 @@ import { notifyAdmins, notifyUser } from "../services/notificationService.js";
  */
 export const getBookings = async (req, res) => {
   try {
-    const { 
-      page = 1, 
+    const {
+      page = 1,
       limit = 10,
       date,
       dateStart,
@@ -21,7 +21,8 @@ export const getBookings = async (req, res) => {
       status,
       paymentStatus,
       search,
-      participants
+      participants,
+      ref
     } = req.query;
     
     const pageNum = Math.max(1, parseInt(page));
@@ -113,13 +114,19 @@ export const getBookings = async (req, res) => {
     if (search) {
       const searchTerm = `%${search}%`;
       sql += ` AND (
-        u.first_name LIKE ? OR 
-        u.last_name LIKE ? OR 
-        u.email LIKE ? OR 
-        s.service_name LIKE ? OR 
+        u.first_name LIKE ? OR
+        u.last_name LIKE ? OR
+        u.email LIKE ? OR
+        s.service_name LIKE ? OR
         b.booking_reference LIKE ?
       )`;
       params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Filter by booking reference (for direct links from notifications)
+    if (ref) {
+      sql += " AND b.booking_reference = ?";
+      params.push(ref);
     }
 
     // Count total matching records

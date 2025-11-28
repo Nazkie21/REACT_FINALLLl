@@ -14,7 +14,10 @@ import {
   rescheduleBooking,
   confirmPayment,
   getAvailableInstructors,
-  sendConfirmationEmail
+  sendConfirmationEmail,
+  getCancellationPolicies,
+  calculateRefund,
+  calculateReschedulingFee
 } from '../controllers/bookingController.js';
 
 const router = express.Router();
@@ -54,6 +57,15 @@ router.post('/:bookingId/confirm-payment', confirmPayment);
 
 // Send confirmation email
 router.post('/:bookingId/send-confirmation-email', sendConfirmationEmail);
+
+// Get cancellation policies (public - no auth required)
+router.get('/policies', getCancellationPolicies);
+
+// Calculate refund for a booking (requires auth)
+router.get('/:bookingId/refund-calculation', optionalAuth, calculateRefund);
+
+// Calculate rescheduling fee for a booking (requires auth)
+router.get('/:bookingId/reschedule-calculation', optionalAuth, calculateReschedulingFee);
 
 // Get specific booking by ID (public - no auth required for returning from payment) - CATCH-ALL LAST
 router.get('/:bookingId', getBookingById);

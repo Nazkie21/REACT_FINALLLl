@@ -58,22 +58,20 @@ async function checkTimeConflict(bookingDate, startTime, durationMinutes, exclud
     const startTimeStr = `${Math.floor(startMinutes / 60).toString().padStart(2, '0')}:${(startMinutes % 60).toString().padStart(2, '0')}:00`;
     const endTimeStr = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}:00`;
 
+    // Check for overlapping bookings
+    // Two time ranges overlap if: existing_start < new_end AND existing_end > new_start
     let conflictQuery = `
       SELECT * FROM bookings 
       WHERE booking_date = ?
       AND status NOT IN ('cancelled')
-      AND (
-        (start_time <= ? AND end_time > ?)
-        OR (start_time < ? AND end_time >= ?)
-        OR (start_time >= ? AND start_time < ?)
-      )
+      AND start_time < ?
+      AND end_time > ?
     `;
 
     const params = [
       bookingDate,
-      startTimeStr, startTimeStr,
-      endTimeStr, startTimeStr,
-      startTimeStr, endTimeStr
+      endTimeStr,      // new booking end time
+      startTimeStr     // new booking start time
     ];
 
     if (excludeBookingId) {
@@ -463,9 +461,9 @@ export const createBooking = async (req, res) => {
     try {
       const endTimeStr = endTime ? ` - ${endTime}` : '';
       await notifyAdmins(
-        'booking_received',
-        `NEW BOOKING\nName: ${name}\nEmail: ${email}\nContact: ${contact}\nService: ${serviceType}\nDate: ${bookingDate} at ${startTime}${endTimeStr}\nDuration: ${bookingHours} hour(s)\nAmount: ₱${totalPrice}`,
-        `/admin/bookings?id=${bookingId}`
+        'booking_created',
+        `NEW BOOKING CREATED\nName: ${name}\nEmail: ${email}\nContact: ${contact}\nService: ${serviceType}\nDate: ${bookingDate} at ${startTime}${endTimeStr}\nDuration: ${bookingHours} hour(s)\nAmount: ₱${totalPrice}\nRef: ${bookingReference}`,
+        `/admin/bookings?ref=${bookingReference}`
       );
     } catch (notifErr) {
       console.warn('Failed to send admin notification:', notifErr.message);
@@ -476,7 +474,7 @@ export const createBooking = async (req, res) => {
         await notifyUser(
           userId,
           'booking_confirmation',
-          `Your ${serviceType} booking (${bookingReference}) on ${bookingDate} at ${startTime} has been confirmed!`
+          `Your ${serviceType} booking (${bookingReference}) on ${bookingDate} at ${startTime} has been successfully created!`
         );
       } catch (userNotifErr) {
         console.warn('Failed to send user booking notification:', userNotifErr.message);
@@ -878,8 +876,8 @@ export const updatePaymentStatus = async (req, res) => {
             const userName = booking.name || (booking.user_id ? 'User #' + booking.user_id : 'Guest');
             await notifyAdmins(
               'booking_confirmed',
-              `Booking confirmed: ${userName} - ${booking.service_type} on ${booking.booking_date}`,
-              `/admin/bookings?id=${bookingId}`
+              `BOOKING CONFIRMED\nName: ${userName}\nService: ${booking.service_type}\nDate: ${booking.booking_date}\nRef: ${booking.booking_reference}`,
+              `/admin/bookings?ref=${booking.booking_reference}`
             );
           } catch (error) {
             console.warn('Warning: Failed to send admin confirmation notification:', error.message);
@@ -1157,11 +1155,12 @@ export const getAvailableSlotsV2 = async (req, res) => {
 };
 
 /**
- * Cancel a booking
+ * Cancel a booking with automatic refund calculation
  */
 export const cancelBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
+    const { reason } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!bookingId) {
@@ -1171,7 +1170,7 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    // Get booking details
+    // Get booking details first for validation
     const bookings = await query(
       'SELECT * FROM bookings WHERE booking_id = ?',
       [bookingId]
@@ -1200,20 +1199,42 @@ export const cancelBooking = async (req, res) => {
       }
     }
 
-    // Update booking status to cancelled
-    // Note: payment_status can only be 'pending', 'paid', 'expired', or 'failed'
-    // Use 'expired' for cancelled bookings
-    await query(
-      'UPDATE bookings SET status = ?, payment_status = ? WHERE booking_id = ?',
-      ['cancelled', 'expired', bookingId]
+    const cancelledBy = token ? verifyToken(token)?.id : null;
+    const cancellationReason = reason || 'Cancelled by user';
+
+    // Use the stored procedure to handle cancellation with refund calculation
+    try {
+      await query('CALL process_booking_cancellation(?, ?, ?)', [
+        bookingId,
+        cancelledBy,
+        cancellationReason
+      ]);
+    } catch (procError) {
+      // Check if it's a business rule violation
+      if (procError.message && procError.message.includes('cannot be cancelled')) {
+        return res.status(400).json({
+          success: false,
+          message: procError.message
+        });
+      }
+      throw procError;
+    }
+
+    // Get updated booking details for notifications
+    const updatedBookings = await query(
+      'SELECT * FROM bookings WHERE booking_id = ?',
+      [bookingId]
     );
+    const updatedBooking = updatedBookings[0];
 
     // Send cancellation notification to admin
     try {
+      const refundInfo = updatedBooking.refund_amount > 0 ?
+        `\nRefund Amount: ₱${updatedBooking.refund_amount}` : '\nNo Refund';
       await notifyAdmins(
         'booking_cancelled',
-        `BOOKING CANCELLED\nName: ${booking.customer_name}\nEmail: ${booking.customer_email}\nService: ${booking.service_type || 'Service'}\nDate: ${booking.booking_date}\nTime: ${booking.start_time}\nRef: ${booking.booking_reference}`,
-        `/admin/bookings?id=${bookingId}`
+        `BOOKING CANCELLED\nName: ${booking.customer_name}\nEmail: ${booking.customer_email}\nService: ${booking.service_type || 'Service'}\nDate: ${booking.booking_date}\nTime: ${booking.start_time}\nRef: ${booking.booking_reference}${refundInfo}`,
+        `/admin/bookings?ref=${booking.booking_reference}`
       );
     } catch (error) {
       console.warn('Warning: Failed to send admin cancellation notification:', error.message);
@@ -1237,24 +1258,21 @@ export const cancelBooking = async (req, res) => {
 
     // Send cancellation email
     try {
-      await bookingEmailService.sendBookingCancellationEmail(booking);
+      await bookingEmailService.sendBookingCancellationEmail({
+        ...booking,
+        refund_amount: updatedBooking.refund_amount
+      });
     } catch (error) {
       console.warn('Warning: Failed to send cancellation email:', error.message);
     }
 
-    // Log activity
-    try {
-      await query(
-        'INSERT INTO activity_logs (user_id, action, entity_type, description, success) VALUES (?, ?, ?, ?, ?)',
-        [booking.user_id || null, 'booking_cancelled', 'booking', JSON.stringify({ booking_id: bookingId, booking_reference: booking.booking_reference }), 1]
-      );
-    } catch (logErr) {
-      console.warn('Warning: Failed to log activity:', logErr.message);
-    }
-
     res.json({
       success: true,
-      message: 'Booking cancelled successfully'
+      message: 'Booking cancelled successfully',
+      data: {
+        refund_amount: updatedBooking.refund_amount,
+        cancellation_reason: cancellationReason
+      }
     });
 
   } catch (error) {
@@ -1267,12 +1285,12 @@ export const cancelBooking = async (req, res) => {
 };
 
 /**
- * Reschedule a booking
+ * Reschedule a booking with automatic fee calculation
  */
 export const rescheduleBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const { newDate, newTime, hours } = req.body;
+    const { newDate, newTime, reason } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
 
     // Validate input
@@ -1283,7 +1301,7 @@ export const rescheduleBooking = async (req, res) => {
       });
     }
 
-    // Get original booking details
+    // Get original booking details first for validation
     const bookings = await query(
       'SELECT * FROM bookings WHERE booking_id = ?',
       [bookingId]
@@ -1313,8 +1331,8 @@ export const rescheduleBooking = async (req, res) => {
     }
 
     // Check for time conflicts on new date/time
-    const bookingHours = hours || booking.hours;
-    const hasConflict = await checkTimeConflict(newDate, newTime, bookingHours, bookingId);
+    const durationMinutes = booking.duration_minutes || 60;
+    const hasConflict = await checkTimeConflict(newDate, newTime, durationMinutes, bookingId);
 
     if (hasConflict) {
       return res.status(400).json({
@@ -1323,18 +1341,61 @@ export const rescheduleBooking = async (req, res) => {
       });
     }
 
-    // Update booking with new date and time
-    await query(
-      'UPDATE bookings SET booking_date = ?, booking_time = ?, hours = ? WHERE booking_id = ?',
-      [newDate, newTime, bookingHours, bookingId]
+    const rescheduledBy = token ? verifyToken(token)?.id : null;
+    const reschedulingReason = reason || 'Rescheduled by user';
+
+    // Calculate new end time
+    const [hh, mm] = newTime.split(':');
+    const endMinutes = (parseInt(hh) * 60 + parseInt(mm)) + durationMinutes;
+    const endHour = Math.floor(endMinutes / 60) % 24;
+    const endMin = endMinutes % 60;
+    const newEndTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}:00`;
+
+    // Use the stored procedure to handle rescheduling with fee calculation
+    try {
+      await query('CALL process_booking_rescheduling(?, ?, ?, ?, ?)', [
+        bookingId,
+        newDate,
+        newTime,
+        rescheduledBy,
+        reschedulingReason
+      ]);
+    } catch (procError) {
+      // Check if it's a business rule violation
+      if (procError.message && procError.message.includes('not allowed')) {
+        return res.status(400).json({
+          success: false,
+          message: procError.message
+        });
+      }
+      throw procError;
+    }
+
+    // Get updated booking details for notifications
+    const updatedBookings = await query(
+      'SELECT * FROM bookings WHERE booking_id = ?',
+      [bookingId]
     );
+    const updatedBooking = updatedBookings[0];
+
+    // Get the new booking ID
+    const newBookingQuery = await query(
+      'SELECT booking_id FROM bookings WHERE rescheduled_from = ? AND status = "confirmed"',
+      [bookingId]
+    );
+    const newBookingId = newBookingQuery.length > 0 ? newBookingQuery[0].booking_id : null;
 
     // Send reschedule notification to admin
     try {
+      const feeInfo = updatedBooking.rescheduling_fee > 0 ?
+        `\nRescheduling Fee: ₱${updatedBooking.rescheduling_fee}` : '\nNo Fee';
+      // Get the new booking reference for the notification
+      const newBookingRef = newBookingId ? (await query('SELECT booking_reference FROM bookings WHERE booking_id = ?', [newBookingId]))[0]?.booking_reference : booking.booking_reference;
+
       await notifyAdmins(
         'booking_rescheduled',
-        `BOOKING RESCHEDULED\nName: ${booking.customer_name}\nEmail: ${booking.customer_email}\nService: ${booking.service_type || 'Service'}\nRef: ${booking.booking_reference}\n\nOLD TIME:\n${booking.booking_date} at ${booking.start_time}\n\nNEW TIME:\n${newDate} at ${newTime}`,
-        `/admin/bookings?id=${bookingId}`
+        `BOOKING RESCHEDULED\nName: ${booking.customer_name}\nEmail: ${booking.customer_email}\nService: ${booking.service_type || 'Service'}\nRef: ${booking.booking_reference}\n\nOLD TIME:\n${booking.booking_date} at ${booking.start_time}\n\nNEW TIME:\n${newDate} at ${newTime}${feeInfo}`,
+        `/admin/bookings?ref=${booking.booking_reference}`
       );
     } catch (error) {
       console.warn('Warning: Failed to send admin reschedule notification:', error.message);
@@ -1345,7 +1406,7 @@ export const rescheduleBooking = async (req, res) => {
       try {
         await notifyBookingRescheduled(
           booking.user_id,
-          bookingId,
+          newBookingId || bookingId,
           newDate,
           newTime
         );
@@ -1356,7 +1417,7 @@ export const rescheduleBooking = async (req, res) => {
       // Reschedule reminders for new date/time
       try {
         await rescheduleBookingReminders(
-          bookingId,
+          newBookingId || bookingId,
           booking.user_id,
           newDate,
           newTime,
@@ -1370,35 +1431,29 @@ export const rescheduleBooking = async (req, res) => {
 
     // Send reschedule email
     try {
-      const updatedBooking = {
+      const newBooking = {
         ...booking,
+        booking_id: newBookingId,
         booking_date: newDate,
-        booking_time: newTime,
-        hours: bookingHours
+        start_time: newTime,
+        end_time: newEndTime,
+        rescheduling_fee: updatedBooking.rescheduling_fee
       };
-      await bookingEmailService.sendBookingRescheduleEmail(updatedBooking);
+      await bookingEmailService.sendBookingRescheduleEmail(newBooking);
     } catch (error) {
       console.warn('Warning: Failed to send reschedule email:', error.message);
-    }
-
-    // Log activity
-    try {
-      await query(
-        'INSERT INTO activity_logs (user_id, action, entity_type, description, success) VALUES (?, ?, ?, ?, ?)',
-        [booking.user_id || null, 'booking_rescheduled', 'booking', JSON.stringify({ booking_id: bookingId, booking_reference: booking.booking_reference, old_date: booking.booking_date, new_date: newDate }), 1]
-      );
-    } catch (logErr) {
-      console.warn('Warning: Failed to log activity:', logErr.message);
     }
 
     res.json({
       success: true,
       message: 'Booking rescheduled successfully',
       data: {
-        bookingId,
+        old_booking_id: bookingId,
+        new_booking_id: newBookingId,
         newDate,
         newTime,
-        hours: bookingHours
+        rescheduling_fee: updatedBooking.rescheduling_fee,
+        reason: reschedulingReason
       }
     });
 
@@ -1673,6 +1728,195 @@ export const getAvailableInstructors = async (req, res) => {
       success: false,
       message: 'Failed to fetch instructors',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get cancellation policies
+ * GET /api/bookings/policies
+ */
+export const getCancellationPolicies = async (req, res) => {
+  try {
+    const policies = await query(
+      'SELECT * FROM cancellation_policies WHERE is_active = TRUE ORDER BY policy_type, hours_before_booking'
+    );
+
+    res.json({
+      success: true,
+      data: { policies }
+    });
+  } catch (error) {
+    console.error('Error fetching cancellation policies:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch cancellation policies'
+    });
+  }
+};
+
+/**
+ * Calculate potential refund for a booking
+ * GET /api/bookings/:bookingId/refund-calculation
+ */
+export const calculateRefund = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking ID is required'
+      });
+    }
+
+    // Get booking details
+    const bookings = await query(
+      'SELECT * FROM bookings WHERE booking_id = ?',
+      [bookingId]
+    );
+
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    const booking = bookings[0];
+
+    // Verify user owns this booking or is admin
+    if (token) {
+      const decoded = verifyToken(token);
+      const isAdmin = decoded?.role === 'admin';
+      const isOwner = decoded?.id === booking.user_id;
+
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+      }
+    }
+
+    // Calculate refund using stored function
+    const refundAmount = await query('SELECT calculate_cancellation_refund(?) as refund_amount', [bookingId]);
+    const refund = refundAmount[0]?.refund_amount || 0;
+
+    // Get the applicable policy
+    const hoursUntil = await query('SELECT calculate_hours_until_booking(?, ?) as hours_until',
+      [booking.booking_date, booking.start_time]);
+    const hours = hoursUntil[0]?.hours_until || 0;
+
+    const policy = await query('SELECT * FROM cancellation_policies WHERE policy_id = get_cancellation_policy("cancellation", ?)', [hours]);
+    const policyInfo = policy[0] || null;
+
+    res.json({
+      success: true,
+      data: {
+        booking_id: bookingId,
+        total_amount: booking.total_amount,
+        hours_until_booking: hours,
+        refund_amount: refund,
+        refund_percentage: policyInfo?.refund_percentage || 0,
+        policy_description: policyInfo?.description || 'No refund policy found'
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating refund:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate refund'
+    });
+  }
+};
+
+/**
+ * Calculate potential rescheduling fee for a booking
+ * GET /api/bookings/:bookingId/reschedule-calculation
+ */
+export const calculateReschedulingFee = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking ID is required'
+      });
+    }
+
+    // Get booking details
+    const bookings = await query(
+      'SELECT * FROM bookings WHERE booking_id = ?',
+      [bookingId]
+    );
+
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    const booking = bookings[0];
+
+    // Verify user owns this booking or is admin
+    if (token) {
+      const decoded = verifyToken(token);
+      const isAdmin = decoded?.role === 'admin';
+      const isOwner = decoded?.id === booking.user_id;
+
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+      }
+    }
+
+    // Calculate fee using stored function
+    const feeResult = await query('SELECT calculate_rescheduling_fee(?) as fee_amount', [bookingId]);
+    const fee = feeResult[0]?.fee_amount || 0;
+
+    // Check if rescheduling is allowed
+    const isAllowed = fee !== -1;
+
+    let policyInfo = null;
+    let hours = 0;
+
+    if (isAllowed) {
+      // Get hours until booking
+      const hoursUntil = await query('SELECT calculate_hours_until_booking(?, ?) as hours_until',
+        [booking.booking_date, booking.start_time]);
+      hours = hoursUntil[0]?.hours_until || 0;
+
+      // Get the applicable policy
+      const policy = await query('SELECT * FROM cancellation_policies WHERE policy_id = get_cancellation_policy("rescheduling", ?)', [hours]);
+      policyInfo = policy[0] || null;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        booking_id: bookingId,
+        total_amount: booking.total_amount,
+        hours_until_booking: hours,
+        rescheduling_allowed: isAllowed,
+        fee_amount: isAllowed ? fee : 0,
+        fee_percentage: policyInfo?.fee_percentage || 0,
+        policy_description: isAllowed ?
+          (policyInfo?.description || 'Rescheduling fee policy not found') :
+          'Rescheduling not allowed within 8 hours of booking time'
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating rescheduling fee:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate rescheduling fee'
     });
   }
 };

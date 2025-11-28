@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import NotificationDropdown from '../components/NotificationDropdown'
 
 export default function StudioBooking() {
   const navigate = useNavigate()
@@ -568,13 +569,16 @@ export default function StudioBooking() {
       backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.07), transparent 60%), radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.07), transparent 60%)'
     }}>
       <div className="w-full max-w-2xl mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => window.location.href = '/'}
-          className="mb-6 flex items-center gap-2 text-[#ffd700] hover:text-[#ffe44c] font-semibold transition"
-        >
-          <span className="text-xl">←</span>
-        </button>
+        {/* Header with Back Button and Notifications */}
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={() => window.location.href = '/'}
+            className="flex items-center gap-2 text-[#ffd700] hover:text-[#ffe44c] font-semibold transition"
+          >
+            <span className="text-xl">←</span>
+          </button>
+          <NotificationDropdown isAdmin={false} />
+        </div>
 
         <div className="bg-[#232323] rounded-2xl p-8" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
           <h1 className="text-3xl font-bold text-center mb-8" style={{ color: '#ffd700', textShadow: '0 0 6px rgba(255, 215, 0, 0.3)' }}>

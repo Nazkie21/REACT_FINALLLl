@@ -33,15 +33,24 @@ export default function Login() {
 
         // Use role directly from response (most up-to-date from database)
         const userRole = response.user.role;
-        
+
+        console.log('🔐 Login successful:', {
+          user: response.user,
+          role: userRole,
+          token: !!response.token
+        });
+
         // Redirect based on user role from database
         if (userRole === 'admin') {
+          console.log('Redirecting admin to dashboard');
           // Admin users go to AdminDashboard
           window.location.href = '/admin/dashboard';
         } else if (userRole === 'user' || userRole === 'student') {
+          console.log('Redirecting user to landing page');
           // Regular users go to landing page
           window.location.href = '/';
         } else {
+          console.log('Unknown role, redirecting to landing page');
           // Fallback for any other roles - go to landing page
           window.location.href = '/';
         }

@@ -25,10 +25,15 @@ export async function notifyBookingConfirmed(userId, bookingData) {
  */
 export async function notifyBookingCancelled(userId, bookingId) {
   try {
+    // Get booking reference for better user experience
+    const { query } = await import('../config/db.js');
+    const bookingData = await query('SELECT booking_reference FROM bookings WHERE booking_id = ?', [bookingId]);
+    const bookingRef = bookingData[0]?.booking_reference || bookingId;
+
     await notifyUser(
       userId,
       'booking_cancelled',
-      `Your booking ${bookingId} has been successfully cancelled.`
+      `Your booking ${bookingRef} has been successfully cancelled.`
     );
   } catch (error) {
     console.warn('Warning: Failed to send booking cancellation notification:', error.message);
@@ -40,10 +45,15 @@ export async function notifyBookingCancelled(userId, bookingId) {
  */
 export async function notifyBookingRescheduled(userId, bookingId, newDate, newTime) {
   try {
+    // Get booking reference for better user experience
+    const { query } = await import('../config/db.js');
+    const bookingData = await query('SELECT booking_reference FROM bookings WHERE booking_id = ?', [bookingId]);
+    const bookingRef = bookingData[0]?.booking_reference || bookingId;
+
     await notifyUser(
       userId,
       'booking_rescheduled',
-      `Your booking has been rescheduled to ${newDate} at ${newTime}.`
+      `Your booking ${bookingRef} has been rescheduled to ${newDate} at ${newTime}.`
     );
   } catch (error) {
     console.warn('Warning: Failed to send booking rescheduled notification:', error.message);

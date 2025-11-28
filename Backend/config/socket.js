@@ -81,11 +81,22 @@ export const initializeSocket = (server) => {
 
     // Handle admin notifications subscription
     socket.on('join-admin-notifications', () => {
+      console.log('🔧 Join admin-notifications request:', {
+        socketId: socket.id,
+        hasUser: !!socket.user,
+        userRole: socket.user?.role,
+        userId: socket.user?.id
+      });
+
       if (socket.user && socket.user.role === 'admin') {
         socket.join('admin-notifications');
-        console.log(`Socket ${socket.id} (admin ${socket.user.username}) joined admin-notifications room`);
+        console.log(`✅ Socket ${socket.id} (admin ${socket.user.username}) joined admin-notifications room`);
+
+        // Confirm to client
+        socket.emit('joined-admin-room', { success: true });
       } else {
-        console.warn(`Socket ${socket.id} attempted to join admin-notifications without admin role`);
+        console.warn(`❌ Socket ${socket.id} attempted to join admin-notifications without admin role`);
+        socket.emit('joined-admin-room', { success: false, reason: 'not_admin' });
       }
     });
 
