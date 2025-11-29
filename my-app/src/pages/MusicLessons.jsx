@@ -859,7 +859,7 @@ export default function MusicLessons() {
   const handleLessonSelect = (lesson) => {
     setSelectedLesson(lesson)
     setLessonProgress(0)
-    setQuizStarted(false)
+    setQuizStarted(lesson.showGame ? true : false)
     setShowResults(false)
   }
 
@@ -1365,6 +1365,76 @@ export default function MusicLessons() {
               </div>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Games Section */}
+      <section className="max-w-[1200px] mx-auto p-8 md:p-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4">🎮 Music Learning Games 🎮</h2>
+          <p className="text-[#bbb]">Have fun while learning! Play interactive games anytime to reinforce your skills and stay motivated</p>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+          {/* Guitar Fretboard Master Game */}
+          <button
+            onClick={() => setSelectedLesson({ 
+              title: "Guitar Basics", 
+              id: 1,
+              showGame: 'guitar'
+            })}
+            className="relative bg-gradient-to-br from-[#2a2a2a] to-[#1f1f1f] hover:from-[#333] hover:to-[#222] p-8 rounded-lg border-2 border-[#ffd700]/30 hover:border-[#ffd700]/80 transition text-left cursor-pointer group overflow-hidden"
+            style={{
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(255, 215, 0, 0.05)'
+            }}
+          >
+            {/* Animated background glow */}
+            <div className="absolute inset-0 bg-[#ffd700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative z-10">
+              <div className="text-6xl mb-3 group-hover:scale-110 transition-transform">🎸</div>
+              <h3 className="text-xl font-bold text-[#ffd700] mb-2 group-hover:text-[#ffe44c] transition">Fretboard Master</h3>
+              <p className="text-[#bbb] text-sm mb-4">Learn guitar notes by identifying frets on a virtual fretboard. Perfect for beginners!</p>
+              
+              <div className="flex items-center justify-between pt-4 border-t border-[#ffd700]/20">
+                <div className="text-xs text-[#bbb]">
+                  <p>⏱️ 5-10 mins</p>
+                  <p>🎯 10 Rounds</p>
+                </div>
+                <div className="text-3xl group-hover:translate-x-2 transition-transform">→</div>
+              </div>
+            </div>
+          </button>
+
+          {/* Piano Simon Says Game */}
+          <button
+            onClick={() => setSelectedLesson({ 
+              title: "Piano Fundamentals", 
+              id: 2,
+              showGame: 'piano'
+            })}
+            className="relative bg-gradient-to-br from-[#2a2a2a] to-[#1f1f1f] hover:from-[#333] hover:to-[#222] p-8 rounded-lg border-2 border-[#ffd700]/30 hover:border-[#ffd700]/80 transition text-left cursor-pointer group overflow-hidden"
+            style={{
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(255, 215, 0, 0.05)'
+            }}
+          >
+            {/* Animated background glow */}
+            <div className="absolute inset-0 bg-[#ffd700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative z-10">
+              <div className="text-6xl mb-3 group-hover:scale-110 transition-transform">🎹</div>
+              <h3 className="text-xl font-bold text-[#ffd700] mb-2 group-hover:text-[#ffe44c] transition">Simon Says Keys</h3>
+              <p className="text-[#bbb] text-sm mb-4">Memory game with piano keys - remember the sequence and repeat it correctly!</p>
+              
+              <div className="flex items-center justify-between pt-4 border-t border-[#ffd700]/20">
+                <div className="text-xs text-[#bbb]">
+                  <p>⏱️ 5-15 mins</p>
+                  <p>🎯 Progressive</p>
+                </div>
+                <div className="text-3xl group-hover:translate-x-2 transition-transform">→</div>
+              </div>
+            </div>
+          </button>
         </div>
       </section>
     </div>

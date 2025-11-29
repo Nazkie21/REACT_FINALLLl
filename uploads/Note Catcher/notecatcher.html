@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Note Catcher — Musical Notes</title>
+<style>
+html,body{margin:0;height:100%;background:#071229;overflow:hidden;font-family:sans-serif;}
+canvas{display:block;}
+#startScreen{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(7,18,41,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;}
+#startScreen h1{font-size:3em;margin-bottom:20px;}
+#startScreen button{font-size:1.5em;padding:10px 30px;border:none;border-radius:10px;background:#0ea5a4;color:#071229;cursor:pointer;transition:0.3s;}
+#startScreen button:hover{background:#14b8a6;}
+</style>
+</head>
+<body>
+<div id="startScreen">
+    <h1>Note Catcher</h1>
+    <p>Catch the correct musical notes!</p>
+    <button id="startBtn">Start Game</button>
+</div>
+<canvas id="gameCanvas"></canvas>
+
+<audio id="bgm" loop src="bgm.mp3"></audio>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const bgm = document.getElementById('bgm');
+
+let player = {x:0, y:0, w:150, h:20, speed:0}; // Fixed paddle size
+let notes = [];
+let score = 0;
+let lives = 3;
+let running = false;
+let spawnInterval = 1000; 
+let lastSpawn = 0;
+const noteTypes = ['whole','half','quarter','eighth','sixteenth'];
+let targetNote = noteTypes[Math.floor(Math.random()*noteTypes.length)];
+const keys = {left:false, right:false};
+let isDragging = false;
+
+// *** AUDIO ASSETS ***
+const GOOD_SOUND_URL = "Good.wav";       
+const MISS_SOUND_URL = "Miss.wav";       
+const GAME_OVER_SOUND_URL = "GameOver.mp3"; 
+// ********************
+
+function playSound(url, volume = 0.5) {
+    // Creates a new Audio instance for crisp, non-blocking playback
+    const sound = new Audio(url);
+    sound.volume = volume;
+    sound.currentTime = 0;
+    sound.play().catch(e => console.error(`Sound playback error for ${url}:`, e));
+}
+
+function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    player.y = canvas.height - 60;
+    spawnInterval = Math.max(800, canvas.width * 0.6);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Keyboard controls
+window.addEventListener('keydown', e => {if(e.key==='ArrowLeft'||e.key==='a') keys.left=true; if(e.key==='ArrowRight'||e.key==='d') keys.right=true;});
+window.addEventListener('keyup', e => {if(e.key==='ArrowLeft'||e.key==='a') keys.left=false; if(e.key==='ArrowRight'||e.key==='d') keys.right=false;});
+
+// Mouse drag controls
+canvas.addEventListener('mousedown', e => {
+    // Only start dragging if the mouse is over the paddle
+    if(e.clientX >= player.x && e.clientX <= player.x+player.w && e.clientY >= player.y && e.clientY <= player.y+player.h){
+        isDragging = true;
+    }
+});
+canvas.addEventListener('mouseup', e => { isDragging=false; });
+canvas.addEventListener('mousemove', e => { 
+    if(isDragging) {
+        // Center the paddle on the cursor horizontally
+        player.x = e.clientX - player.w/2; 
+    }
+});
+
+// Touch controls
+canvas.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    if(touch.clientX >= player.x && touch.clientX <= player.x+player.w && touch.clientY >= player.y && touch.clientY <= player.y+player.h){
+        isDragging = true;
+        e.preventDefault(); // Prevent scrolling while touching game area
+    }
+});
+canvas.addEventListener('touchend', e => { isDragging=false; });
+canvas.addEventListener('touchmove', e => {
+    if(isDragging){
+        const touch = e.touches[0];
+        player.x = touch.clientX - player.w/2;
+        e.preventDefault();
+    }
+});
+
+function rand(min,max){return Math.random()*(max-min)+min;}
+function spawnNote(){
+    let type;
+    // 50% chance to spawn the target note, 50% chance to spawn one of the others
+    if(Math.random()<0.5) type=targetNote; else { const others = noteTypes.filter(n=>n!==targetNote); type = others[Math.floor(Math.random()*others.length)];}
+    notes.push({x:rand(30,canvas.width-30),y:-30,r:canvas.height*0.03,type,vy:rand(canvas.height*0.002,canvas.height*0.005)});
+}
+
+function gameOverSequence(){
+    running = false;
+    bgm.pause();
+    bgm.currentTime = 0;
+    playSound(GAME_OVER_SOUND_URL, 1.0);
+    // Delay the alert to let the game over sound play briefly
+    setTimeout(() => {
+        alert('Game Over! Score: '+score);
+        location.reload();
+    }, 1500);
+}
+
+function update(){
+    if(!running) return;
+
+    // Player Movement
+    if(keys.left) player.x -= player.speed;
+    if(keys.right) player.x += player.speed;
+    if(player.x<0) player.x=0;
+    if(player.x+player.w>canvas.width) player.x=canvas.width-player.w;
+    
+    // Spawn Notes
+    if(performance.now()-lastSpawn>spawnInterval){spawnNote(); lastSpawn=performance.now();}
+
+    // Update and Check Notes
+    for(let i=notes.length-1;i>=0;i--){
+        let n=notes[i];
+        n.y+=n.vy;
+
+        // Collision Check (Note caught by paddle)
+        if(n.y+n.r>player.y && n.y-n.r<player.y+player.h && Math.abs(n.x-(player.x+player.w/2))<player.w/2+n.r){
+            if(n.type===targetNote){
+                // Correct Catch (GOOD)
+                score +=1; 
+                playSound(GOOD_SOUND_URL, 0.7);
+                targetNote = noteTypes[Math.floor(Math.random()*noteTypes.length)]; // Set new target
+            }
+            else {
+                // Incorrect Catch (MISS)
+                lives--; 
+                playSound(MISS_SOUND_URL, 0.8);
+                if(lives<=0){gameOverSequence(); return;}
+            }
+            notes.splice(i,1); continue;
+        }
+
+        // Drop Check (Note missed the paddle)
+        if(n.y>canvas.height){
+            if(n.type===targetNote){
+                // Missed the Target Note
+                lives--; 
+                playSound(MISS_SOUND_URL, 0.8);
+                if(lives<=0){gameOverSequence(); return;}
+            }
+            // If a non-target note falls off screen, no penalty, just remove it.
+            notes.splice(i,1);
+        }
+    }
+}
+
+function drawNoteShape(n,sizeMultiplier=1){
+    // Drawing logic remains the same (Whole, Half, Quarter, Eighth, Sixteenth)
+    ctx.save(); ctx.translate(n.x,n.y);
+    ctx.beginPath(); ctx.ellipse(0,0,n.r*0.7*sizeMultiplier,n.r*0.55*sizeMultiplier,0,0,Math.PI*2);
+    ctx.strokeStyle='#fff';
+    
+    // Fill/Stroke based on note value (Quarter, Eighth, Sixteenth are filled)
+    if(n.type==='quarter' || n.type==='eighth' || n.type==='sixteenth') {
+        ctx.fillStyle='#fff';
+        ctx.fill();
+    } else {
+        ctx.lineWidth=2;
+        ctx.stroke();
+    }
+    
+    // Stem
+    if(n.type!=='whole'){
+        ctx.fillStyle = '#fff'; 
+        ctx.fillRect(n.r*0.6*sizeMultiplier,-n.r*1.4*sizeMultiplier,3*sizeMultiplier,n.r*2.2*sizeMultiplier);
+    }
+    
+    // Flags/Beams
+    let flags=0; 
+    if(n.type==='eighth') flags=1; 
+    if(n.type==='sixteenth') flags=2;
+    
+    for(let f=0;f<flags;f++){
+        ctx.beginPath();
+        ctx.moveTo(n.r*0.6*sizeMultiplier+3,-n.r*1.4*sizeMultiplier+f*6*sizeMultiplier); 
+        ctx.quadraticCurveTo(n.r*0.6*sizeMultiplier+15,-n.r*0.8*sizeMultiplier+f*6*sizeMultiplier,n.r*0.6*sizeMultiplier+3,-n.r*0.2*sizeMultiplier+f*6*sizeMultiplier); 
+        ctx.strokeStyle='#fff'; 
+        ctx.lineWidth=2; 
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function draw(){
+    ctx.fillStyle='#071229'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    
+    // Draw Note Legend (Helper for the player)
+    ctx.fillStyle='#0ea5a4'; 
+    ctx.fillRect(player.x,player.y,player.w,player.h); // Paddle
+
+    // Draw Falling Notes
+    notes.forEach(n=>drawNoteShape(n));
+    
+    // Draw UI Text
+    ctx.fillStyle='#fff';
+    ctx.font=`${canvas.height*0.05}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText('CATCH: '+targetNote.toUpperCase(),canvas.width/2,canvas.height*0.08); // Target Note Display
+    
+    ctx.font=`${canvas.height*0.03}px sans-serif`;
+    ctx.textAlign='left';
+    ctx.fillText('Score: '+score,20,canvas.height*0.12);
+    ctx.fillText('Lives: '+lives,20,canvas.height*0.16);
+    
+    // Set player speed based on screen width for responsiveness
+    player.speed = canvas.width*0.008;
+}
+
+function loop(){
+    if(running){
+        update(); 
+        draw(); 
+        requestAnimationFrame(loop);
+    }
+}
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+    document.getElementById('startScreen').style.display='none';
+    
+    // Unlock Audio Context and start BGM here, tied to user interaction
+    bgm.volume = 0.4;
+    bgm.play().catch(e => console.error('BGM Autoplay blocked:', e));
+
+    // Also trigger a silent play/pause for the sound effects to unlock them
+    new Audio(GOOD_SOUND_URL).play().then(a => a.pause()).catch(e => console.warn('Sound unlock failed:', e));
+
+    running = true;
+    loop();
+});
+</script>
+</body>
+</html>

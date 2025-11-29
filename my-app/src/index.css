@@ -15,8 +15,38 @@
     }
   }
 
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;
+  }
+
+  .animate-slideIn {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-slideInLeft {
+    animation: slideInLeft 0.3s ease-out;
   }
 
   /* Smooth scroll behavior */
@@ -26,6 +56,12 @@
 
   /* Enhanced focus states for accessibility */
   button:focus-visible {
+    @apply outline-2 outline-offset-2 outline-[#ffd700];
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
     @apply outline-2 outline-offset-2 outline-[#ffd700];
   }
 
@@ -45,5 +81,52 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: #ffe44c;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-xl {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl;
+  }
+
+  .text-responsive-md {
+    @apply text-base sm:text-lg md:text-xl;
+  }
+
+  /* Responsive padding utilities */
+  .p-responsive {
+    @apply p-4 sm:p-6 md:p-8 lg:p-12;
+  }
+
+  .px-responsive {
+    @apply px-4 sm:px-6 md:px-8 lg:px-12;
+  }
+
+  .py-responsive {
+    @apply py-6 sm:py-8 md:py-10 lg:py-16;
+  }
+
+  /* Mobile-first container utility */
+  .container-responsive {
+    @apply mx-auto px-4 sm:px-6 md:px-8 lg:px-0;
+  }
+
+  /* Ensure text is readable on all devices */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px;
   }
 }

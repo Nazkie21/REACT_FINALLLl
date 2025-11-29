@@ -554,43 +554,43 @@ export default function Landing() {
       
       {/* Header */}
       <header className="w-full sticky top-0 z-50 bg-[#1b1b1b] shadow-md border-b border-[#444]">
-        <div className="w-full flex items-center px-4 py-2 relative">
+        <div className="w-full flex items-center px-3 sm:px-4 md:px-6 py-2 relative gap-2 sm:gap-3">
           {/* Logo - Far Left */}
           <a href="/" className="flex items-center z-10 flex-shrink-0">
-            <img src={logo} alt="MixLab Logo" className="h-20 transition-transform hover:scale-105"/>
+            <img src={logo} alt="MixLab Logo" className="h-14 sm:h-16 md:h-20 transition-transform hover:scale-105 w-auto"/>
           </a>
 
-          {/* Navigation - Absolutely Centered */}
+          {/* Navigation - Absolutely Centered - Hidden on mobile */}
           <nav className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2">
-            <ul className="flex items-center gap-5">
-              <li><a href="/about" className="px-3 py-2 rounded hover:bg-white/5 transition">About</a></li>
+            <ul className="flex items-center gap-2 xl:gap-5 text-sm xl:text-base">
+              <li><a href="/about" className="px-2 xl:px-3 py-2 rounded hover:bg-white/5 transition">About</a></li>
               <li className="relative group">
-                <a href="/services" className="px-3 py-2 rounded hover:bg-white/5 transition">Services & Features</a>
-                <ul className="absolute left-1/2 -translate-x-1/2 mt-2 bg-[#2a2a2a] rounded-lg hidden group-hover:flex flex-col min-w-[200px] shadow-lg gap-2 p-2">
-                  <li><a href="/music-lessons" className="px-5 py-3 text-base hover:bg-[#1b1b1b] rounded transition">Music Lessons</a></li>
-                  <li><a href="/band-rehearsal" className="px-5 py-3 text-base hover:bg-[#1b1b1b] rounded transition">Band Rehearsal</a></li>
-                  <li><a href="/recording" className="px-5 py-3 text-base hover:bg-[#1b1b1b] rounded transition">Recording</a></li>
-                  <li><a href="/live-room" className="px-5 py-3 text-base hover:bg-[#1b1b1b] rounded transition">Live Room</a></li>
-                  <li><a href="/control-room" className="px-5 py-3 text-base hover:bg-[#1b1b1b] rounded transition">Control Room</a></li>
-                  <li><a href="/main-hall" className="px-5 py-3 text-base hover:bg-[#1b1b1b] rounded transition">Main Hall</a></li>
+                <a href="/services" className="px-2 xl:px-3 py-2 rounded hover:bg-white/5 transition whitespace-nowrap">Services & Features</a>
+                <ul className="absolute left-1/2 -translate-x-1/2 mt-2 bg-[#2a2a2a] rounded-lg hidden group-hover:flex flex-col min-w-[180px] xl:min-w-[200px] shadow-lg gap-2 p-2">
+                  <li><a href="/music-lessons" className="px-4 py-2 text-sm xl:text-base hover:bg-[#1b1b1b] rounded transition">Music Lessons</a></li>
+                  <li><a href="/band-rehearsal" className="px-4 py-2 text-sm xl:text-base hover:bg-[#1b1b1b] rounded transition">Band Rehearsal</a></li>
+                  <li><a href="/recording" className="px-4 py-2 text-sm xl:text-base hover:bg-[#1b1b1b] rounded transition">Recording</a></li>
+                  <li><a href="/live-room" className="px-4 py-2 text-sm xl:text-base hover:bg-[#1b1b1b] rounded transition">Live Room</a></li>
+                  <li><a href="/control-room" className="px-4 py-2 text-sm xl:text-base hover:bg-[#1b1b1b] rounded transition">Control Room</a></li>
+                  <li><a href="/main-hall" className="px-4 py-2 text-sm xl:text-base hover:bg-[#1b1b1b] rounded transition">Main Hall</a></li>
                 </ul>
               </li>
-              <li><a href="/gallery" className="px-3 py-2 rounded hover:bg-white/5 transition">Gallery</a></li>
-              <li><a href="/contact" className="px-3 py-2 rounded hover:bg-white/5 transition">Contact Us</a></li>
-              <li><a href="/Reservations" className="px-3 py-2 rounded hover:bg-white/5 transition ">Reservation</a></li>
+              <li><a href="/gallery" className="px-2 xl:px-3 py-2 rounded hover:bg-white/5 transition">Gallery</a></li>
+              <li><a href="/contact" className="px-2 xl:px-3 py-2 rounded hover:bg-white/5 transition">Contact Us</a></li>
+              <li><a href="/Reservations" className="px-2 xl:px-3 py-2 rounded hover:bg-white/5 transition whitespace-nowrap">Reservation</a></li>
             </ul>
           </nav>
 
           {/* User Actions - Far Right */}
-          <div className="hidden lg:flex items-center gap-4 z-10 relative flex-shrink-0 ml-auto">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-4 z-10 relative flex-shrink-0 ml-auto">
             {user && (
               <button 
                 onClick={() => setShowNotificationPanel(!showNotificationPanel)}
-                className="flex items-center justify-center w-10 h-10 text-[#ffd700] hover:text-[#ffe44c] transition p-0 relative" 
+                className="flex items-center justify-center w-9 h-9 xl:w-10 xl:h-10 text-[#ffd700] hover:text-[#ffe44c] transition p-0 relative rounded-lg hover:bg-white/5" 
                 title="Notifications" 
                 aria-label="Notifications"
               >
-                <FaBell className="text-xl" />
+                <FaBell className="text-lg xl:text-xl" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -599,27 +599,27 @@ export default function Landing() {
               </button>
             )}
             {user ? (
-              <a href="/Profile" className="flex items-center p-2 rounded-full hover:bg-[#ffd700]/10 transition group" title={`Go to profile - ${displayName(user)}`}>
+              <a href="/Profile" className="flex items-center p-1.5 xl:p-2 rounded-full hover:bg-[#ffd700]/10 transition group" title={`Go to profile - ${displayName(user)}`}>
                 {/* Profile Avatar - Independent Element */}
-                <span className="bg-[#ffd700] text-black w-10 h-10 rounded-full flex items-center justify-center uppercase font-semibold group-hover:shadow-[0_0_12px_#ffd700]">
+                <span className="bg-[#ffd700] text-black w-9 h-9 xl:w-10 xl:h-10 rounded-full flex items-center justify-center uppercase font-semibold text-sm xl:text-base group-hover:shadow-[0_0_12px_#ffd700]">
                   {displayName(user)?.charAt(0) || 'U'}
                 </span>
               </a>
             ) : (
-              <button ref={loginButtonRef} onClick={() => setShowLoginModal(!showLoginModal)} className="px-4 py-2 bg-[#ffd700] hover:bg-[#ffe44c] text-black rounded-lg transition font-semibold shadow-lg">Log in</button>
+              <button ref={loginButtonRef} onClick={() => setShowLoginModal(!showLoginModal)} className="px-3 xl:px-4 py-2 bg-[#ffd700] hover:bg-[#ffe44c] text-black rounded-lg transition font-semibold shadow-lg text-sm xl:text-base">Log in</button>
             )}
           </div>
 
           {/* Mobile Icons */}
-          <div className="lg:hidden flex items-center gap-3 z-20">
+          <div className="lg:hidden flex items-center gap-2 z-20 ml-auto">
             {user && (
               <button 
                 onClick={() => setShowNotificationPanel(!showNotificationPanel)}
-                className="flex items-center justify-center w-10 h-10 text-[#ffd700] hover:text-[#ffe44c] transition p-0 relative" 
+                className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-[#ffd700] hover:text-[#ffe44c] transition p-0 relative rounded-lg hover:bg-white/5" 
                 title="Notifications" 
                 aria-label="Notifications"
               >
-                <FaBell className="text-xl" />
+                <FaBell className="text-lg sm:text-xl" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -627,7 +627,7 @@ export default function Landing() {
                 )}
               </button>
             )}
-            <button className="text-[#ffd700] text-2xl p-2" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)}>☰</button>
+            <button className="text-[#ffd700] text-xl sm:text-2xl p-2 rounded-lg hover:bg-white/5 transition" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)}>☰</button>
           </div>
           
           {/* Mobile Nav Drawer */}
@@ -635,17 +635,17 @@ export default function Landing() {
             <>
               {/* Backdrop */}
               <div 
-                className="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity"
+                className="fixed inset-0 bg-black/60 z-40 transition-opacity"
                 onClick={() => setMobileMenuOpen(false)}
               />
               
               {/* Drawer */}
-              <div className="fixed top-0 right-0 h-full w-[280px] bg-[#1b1b1b] z-50 shadow-2xl flex flex-col animate-slideIn">
+              <div className="fixed top-0 right-0 h-full w-[85vw] max-w-xs sm:w-80 bg-[#1b1b1b] z-50 shadow-2xl flex flex-col animate-slideIn">
                 {/* Drawer Header */}
-                <div className="flex justify-between items-center p-4 border-b border-[#ffd700]/30">
-                  <img src={logo} alt="MixLab Logo" className="h-12" />
+                <div className="flex justify-between items-center p-3 sm:p-4 border-b border-[#ffd700]/30">
+                  <img src={logo} alt="MixLab Logo" className="h-10 sm:h-12 w-auto" />
                   <button 
-                    className="text-[#ffd700] text-3xl hover:text-white transition p-2" 
+                    className="text-[#ffd700] text-2xl sm:text-3xl hover:text-white transition p-2 rounded-lg hover:bg-white/5" 
                     aria-label="Close menu" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -654,100 +654,100 @@ export default function Landing() {
                 </div>
                 
                 {/* Navigation Links */}
-                <nav className="flex-1 flex flex-col py-4 overflow-y-auto">
+                <nav className="flex-1 flex flex-col py-3 sm:py-4 overflow-y-auto">
                   <a 
                     href="/about" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg">About</span>
+                    <span>About</span>
                   </a>
                   <a 
                     href="/services" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg">Services & Features</span>
+                    <span>Services & Features</span>
                   </a>
                   <a 
                     href="/music-lessons" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base pl-6 sm:pl-10" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg pl-4">Music Lessons</span>
+                    <span>Music Lessons</span>
                   </a>
                   <a 
                     href="/band-rehearsal" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base pl-6 sm:pl-10" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg pl-4">Band Rehearsal</span>
+                    <span>Band Rehearsal</span>
                   </a>
                   <a 
                     href="/recording" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base pl-6 sm:pl-10" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg pl-4">Recording</span>
+                    <span>Recording</span>
                   </a>
                   <a 
                     href="/live-room" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base pl-6 sm:pl-10" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg pl-4">Live Room</span>
+                    <span>Live Room</span>
                   </a>
                   <a 
                     href="/control-room" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base pl-6 sm:pl-10" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg pl-4">Control Room</span>
+                    <span>Control Room</span>
                   </a>
                   <a 
                     href="/main-hall" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base pl-6 sm:pl-10" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg pl-4">Main Hall</span>
+                    <span>Main Hall</span>
                   </a>
                   <a 
                     href="/gallery" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg">Gallery</span>
+                    <span>Gallery</span>
                   </a>
                   <a 
                     href="/contact" 
-                    className="flex items-center px-6 py-4 text-white hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 text-white hover:bg-white/5 transition text-sm sm:text-base" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg">Contact Us</span>
+                    <span>Contact Us</span>
                   </a>
                   <a 
                     href="/Reservations" 
-                    className="flex items-center px-6 py-4 font-semibold hover:bg-white/5 transition" 
+                    className="flex items-center px-4 sm:px-6 py-3 sm:py-4 font-semibold hover:bg-white/5 transition text-sm sm:text-base" 
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className="text-lg">Reservation</span>
+                    <span>Reservation</span>
                   </a>
                   
                   {/* Divider */}
-                  <div className="border-t border-[#ffd700]/30 my-4" />
+                  <div className="border-t border-[#ffd700]/30 my-3 sm:my-4" />
                   
                   {/* User Section */}
-                  <div className="px-6 py-4 flex flex-col gap-3">
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-2 sm:gap-3">
                     {user ? (
                       <a 
                         href="/Profile" 
-                        className="flex items-center gap-3 p-3 border border-[#ffd700] rounded-lg hover:bg-[#ffd700] hover:text-black transition group" 
+                        className="flex items-center gap-3 p-2 sm:p-3 border border-[#ffd700] rounded-lg hover:bg-[#ffd700] hover:text-black transition group text-sm sm:text-base" 
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <span className="bg-[#ffd700] text-black w-10 h-10 rounded-full flex items-center justify-center uppercase font-semibold">{displayName(user)?.charAt(0) || 'U'}</span>
-                        <div className="flex flex-col">
-                          <span className="text-base font-semibold">{displayName(user) || 'User'}</span>
-                          <span className="text-xs">Student</span>
+                        <span className="bg-[#ffd700] text-black w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center uppercase font-semibold text-xs sm:text-sm">{displayName(user)?.charAt(0) || 'U'}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold truncate">{displayName(user) || 'User'}</span>
+                          <span className="text-xs opacity-75">Student</span>
                         </div>
                       </a>
                     ) : (
@@ -756,7 +756,7 @@ export default function Landing() {
                           setShowLoginModal(true);
                           setMobileMenuOpen(false);
                         }}
-                        className="block text-center w-full px-4 py-3 bg-[#ffd700] text-black font-semibold rounded-lg hover:bg-[#ffe44c] transition shadow-lg"
+                        className="block text-center w-full px-4 py-3 bg-[#ffd700] text-black font-semibold rounded-lg hover:bg-[#ffe44c] transition shadow-lg text-sm sm:text-base"
                       >
                         Log in
                       </button>
@@ -771,13 +771,13 @@ export default function Landing() {
 
       {/* Notification Panel */}
       {showNotificationPanel && user && (
-        <div className="fixed top-20 right-4 w-96 max-h-96 bg-[#2a2a2a] rounded-lg shadow-2xl border border-[#ffd700]/30 z-40 overflow-hidden flex flex-col">
+        <div className="fixed top-16 sm:top-20 right-3 sm:right-4 w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 max-h-96 bg-[#2a2a2a] rounded-lg shadow-2xl border border-[#ffd700]/30 z-40 overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="bg-[#1b1b1b] px-4 py-3 border-b border-[#ffd700]/30 flex justify-between items-center">
-            <h3 className="text-white font-bold">Notifications</h3>
+          <div className="bg-[#1b1b1b] px-3 sm:px-4 py-3 border-b border-[#ffd700]/30 flex justify-between items-center">
+            <h3 className="text-white font-bold text-sm sm:text-base">Notifications</h3>
             <button 
               onClick={() => setShowNotificationPanel(false)}
-              className="text-[#bbb] hover:text-white transition text-xl"
+              className="text-[#bbb] hover:text-white transition text-lg sm:text-xl"
             >
               ×
             </button>
@@ -790,22 +790,22 @@ export default function Landing() {
                 <button
                   key={idx}
                   onClick={() => handleNotificationClick(notif)}
-                  className={`w-full text-left px-4 py-3 border-b border-[#1a1a1a] hover:bg-[#333] transition ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 border-b border-[#1a1a1a] hover:bg-[#333] transition ${
                     !notif.read_status ? 'bg-[#1a1a1a]' : ''
                   }`}
                 >
                   <div className="flex justify-between items-start gap-2 mb-1">
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       {notif.type === 'booking_confirmation' ? (
-                        <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
+                        <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
                       ) : notif.type?.includes('reminder') ? (
-                        <Clock size={18} className="text-blue-500 flex-shrink-0" />
+                        <Clock size={16} className="text-blue-500 flex-shrink-0" />
                       ) : notif.type === 'booking_cancelled' ? (
-                        <XCircle size={18} className="text-red-500 flex-shrink-0" />
+                        <XCircle size={16} className="text-red-500 flex-shrink-0" />
                       ) : (
-                        <AlertCircle size={18} className="text-yellow-500 flex-shrink-0" />
+                        <AlertCircle size={16} className="text-yellow-500 flex-shrink-0" />
                       )}
-                      <h4 className={`text-sm font-bold ${notif.read_status ? 'text-[#bbb]' : 'text-[#ffd700]'}`}>
+                      <h4 className={`text-xs sm:text-sm font-bold truncate ${notif.read_status ? 'text-[#bbb]' : 'text-[#ffd700]'}`}>
                         {notif.title}
                       </h4>
                     </div>
@@ -820,15 +820,15 @@ export default function Landing() {
                 </button>
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-[#666]">
-                <p className="text-sm">No notifications yet</p>
+              <div className="px-3 sm:px-4 py-8 text-center text-[#666]">
+                <p className="text-xs sm:text-sm">No notifications yet</p>
               </div>
             )}
           </div>
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="bg-[#1b1b1b] px-4 py-2 border-t border-[#ffd700]/30">
+            <div className="bg-[#1b1b1b] px-3 sm:px-4 py-2 border-t border-[#ffd700]/30">
               <button 
                 onClick={async () => {
                   const token = localStorage.getItem('token');
@@ -889,231 +889,252 @@ export default function Landing() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 bg-black/40 p-8 rounded">
-          <h1 className="text-5xl md:text-6xl font-bold mb-5">Sound<br />Your Best</h1>
-          <p className="text-[#bbb] mb-8 text-lg md:text-xl">Experience the Music on <a href="#" className="text-[#ffd700] font-bold hover:underline">MixLab Music®</a>, Recording, Rehearsal, and Music Lessons.</p>
-          <div className="text-4xl animate-bounce text-white">↓</div>
+        <div className="relative z-10 bg-black/40 p-4 sm:p-6 md:p-8 rounded-lg mx-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-5 leading-tight">Sound<br />Your Best</h1>
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#bbb] mb-6 sm:mb-8 max-w-2xl mx-auto">Experience the Music on <a href="#" className="text-[#ffd700] font-bold hover:underline">MixLab Music®</a>, Recording, Rehearsal, and Music Lessons.</p>
+          <div className="text-3xl sm:text-4xl animate-bounce text-white">↓</div>
         </div>
       </section>
 
 
 
       {/* Testimonials */}
-      <section className="testimonials-section bg-[#1b1b1b] p-16 text-center">
-        <div className="container mx-auto max-w-[900px]">
-          <h2 className="text-4xl font-bold mb-4 text-white">What Our Clients Say</h2>
-          <p className="text-[#bbb] mb-10">Don't just take our word for it — hear from our satisfied customers</p>
+      <section className="testimonials-section bg-[#1b1b1b] py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8 text-center">
+        <div className="container mx-auto max-w-lg sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 text-white">What Our Clients Say</h2>
+          <p className="text-xs sm:text-sm md:text-base text-[#bbb] mb-8 sm:mb-10">Don't just take our word for it — hear from our satisfied customers</p>
 
-          <div className="testimonial-card bg-[#2a2a2a] p-10 rounded-lg relative border border-[#ffd700]/30 shadow-lg">
-            <div className="text-[#ffd700] text-6xl mb-3">"</div>
+          <div className="testimonial-card bg-[#2a2a2a] p-6 sm:p-8 md:p-10 rounded-lg relative border border-[#ffd700]/30 shadow-lg">
+            <div className="text-[#ffd700] text-4xl sm:text-5xl md:text-6xl mb-2 sm:mb-3">"</div>
 
-            <div className="stars flex justify-center gap-1 mb-4">
+            <div className="stars flex justify-center gap-1 mb-3 sm:mb-4">
               {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                <span key={i} className="text-[#ffd700] text-2xl">★</span>
+                <span key={i} className="text-[#ffd700] text-lg sm:text-xl md:text-2xl">★</span>
               ))}
             </div>
 
-            <p className="testimonial-content text-[#ddd] text-lg italic my-5">
+            <p className="testimonial-content text-xs sm:text-sm md:text-base lg:text-lg text-[#ddd] italic my-4 sm:my-5 leading-relaxed">
               {testimonials[currentTestimonial].content}
             </p>
 
-            <div className="author mt-4">
-              <h4 className="text-[#ffd700] text-xl font-semibold">
+            <div className="author mt-3 sm:mt-4">
+              <h4 className="text-[#ffd700] text-base sm:text-lg md:text-xl font-semibold">
                 {testimonials[currentTestimonial].name}
               </h4>
             </div>
 
+            {/* Navigation Buttons - Hidden on mobile, shown on larger screens */}
             <button 
               onClick={handlePrevTestimonial}
-              className="testimonial-nav left absolute left-5 top-1/2 transform -translate-y-1/2 text-3xl text-white hover:text-[#ffd700] transition"
+              className="hidden sm:block testimonial-nav left absolute left-3 md:left-5 top-1/2 transform -translate-y-1/2 text-2xl md:text-3xl text-white hover:text-[#ffd700] transition rounded-lg hover:bg-white/5 p-2"
               aria-label="Previous testimonial"
             >
               ❮
             </button>
             <button 
               onClick={handleNextTestimonial}
-              className="testimonial-nav right absolute right-5 top-1/2 transform -translate-y-1/2 text-3xl text-white hover:text-[#ffd700] transition"
+              className="hidden sm:block testimonial-nav right absolute right-3 md:right-5 top-1/2 transform -translate-y-1/2 text-2xl md:text-3xl text-white hover:text-[#ffd700] transition rounded-lg hover:bg-white/5 p-2"
               aria-label="Next testimonial"
             >
               ❯
             </button>
           </div>
 
-          <div className="testimonial-dots flex justify-center gap-2 mt-5">
+          <div className="testimonial-dots flex justify-center gap-2 mt-6 sm:mt-7 md:mt-8 flex-wrap">
             {testimonials.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentTestimonial(i)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  i === currentTestimonial ? 'bg-[#ffd700] w-8' : 'bg-white/30'
+                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all ${
+                  i === currentTestimonial ? 'bg-[#ffd700] w-6 sm:w-8' : 'bg-white/30'
                 }`}
-                aria-label="Go to testimonial"
+                aria-label={`Go to testimonial ${i + 1}`}
               />
             ))}
+          </div>
+
+          {/* Mobile Navigation Text */}
+          <div className="sm:hidden flex justify-center gap-3 mt-6">
+            <button 
+              onClick={handlePrevTestimonial}
+              className="px-3 py-2 text-sm text-white bg-[#ffd700]/20 hover:bg-[#ffd700]/30 border border-[#ffd700]/50 rounded transition"
+              aria-label="Previous testimonial"
+            >
+              ← Previous
+            </button>
+            <button 
+              onClick={handleNextTestimonial}
+              className="px-3 py-2 text-sm text-white bg-[#ffd700]/20 hover:bg-[#ffd700]/30 border border-[#ffd700]/50 rounded transition"
+              aria-label="Next testimonial"
+            >
+              Next →
+            </button>
           </div>
         </div>
       </section>
 
       {/* Booking CTA - Mini-Form with Validation */}
-      <aside className="max-w-lg mx-auto my-20 p-10 bg-[#2a2a2a] rounded-lg shadow-lg border border-[#ffd700]/30" style={{boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'}}>
-        <h2 className="text-3xl font-bold text-[#ffd700] mb-6 text-center">Book a Session</h2>
-        
-        {miniFormError && (
-          <div className="bg-red-900/50 border border-red-500 text-red-300 p-3 rounded-lg mb-4 text-sm text-center">
-            {miniFormError}
-          </div>
-        )}
+      <aside className="w-full max-w-lg mx-auto my-10 sm:my-16 md:my-20 px-4 sm:px-6 md:px-0">
+        <div className="p-6 sm:p-8 md:p-10 bg-[#2a2a2a] rounded-lg shadow-lg border border-[#ffd700]/30" style={{boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'}}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#ffd700] mb-4 sm:mb-6 text-center">Book a Session</h2>
+          
+          {miniFormError && (
+            <div className="bg-red-900/50 border border-red-500 text-red-300 p-3 rounded-lg mb-4 text-xs sm:text-sm text-center">
+              {miniFormError}
+            </div>
+          )}
 
-        <div className="flex flex-col gap-5">
-          {/* Step 1: Full Name */}
-          <div>
-            <label className="text-sm font-semibold text-gray-200 block mb-2">Your Full Name *</label>
-            <input 
-              type="text" 
-              name="name"
-              placeholder="Your Full Name" 
-              value={miniBooking.name}
-              onChange={handleMiniInputChange}
-              className="w-full p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-white placeholder-[#666] focus:border-[#ffd700] focus:ring-1 focus:ring-[#ffd700] outline-none"
-            />
-          </div>
-
-          {/* Step 2: Service Type */}
-          <div>
-            <label className="text-sm font-semibold text-gray-200 block mb-2">Service Type *</label>
-            <select 
-              value={miniBooking.service}
-              onChange={(e) => handleMiniServiceChange(e.target.value)}
-              className="w-full p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-white focus:border-[#ffd700] focus:ring-1 focus:ring-[#ffd700] outline-none cursor-pointer"
-            >
-              <option value="">Select a service...</option>
-              <option value="music_lesson">Music Lessons</option>
-              <option value="recording">Recording</option>
-              <option value="mixing">Mixing</option>
-              <option value="band_rehearsal">Band Rehearsal</option>
-              <option value="production">Production</option>
-            </select>
-          </div>
-
-          {/* Step 3: Duration Selection */}
-          {miniBooking.service && (
+          <form className="flex flex-col gap-4 sm:gap-5">
+            {/* Step 1: Full Name */}
             <div>
-              {SERVICE_CONFIG[miniBooking.service]?.durationFixed ? (
-                <>
-                  <label className="text-sm font-semibold text-gray-200 block mb-2">Duration</label>
-                  <div className="p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-gray-300 text-sm">
-                    1 hour (automatically set for Music Lessons)
+              <label className="text-xs sm:text-sm font-semibold text-gray-200 block mb-2">Your Full Name *</label>
+              <input 
+                type="text" 
+                name="name"
+                placeholder="Your Full Name" 
+                value={miniBooking.name}
+                onChange={handleMiniInputChange}
+                className="w-full p-2.5 sm:p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-white text-sm placeholder-[#666] focus:border-[#ffd700] focus:ring-1 focus:ring-[#ffd700] outline-none transition"
+              />
+            </div>
+
+            {/* Step 2: Service Type */}
+            <div>
+              <label className="text-xs sm:text-sm font-semibold text-gray-200 block mb-2">Service Type *</label>
+              <select 
+                value={miniBooking.service}
+                onChange={(e) => handleMiniServiceChange(e.target.value)}
+                className="w-full p-2.5 sm:p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-white text-sm focus:border-[#ffd700] focus:ring-1 focus:ring-[#ffd700] outline-none cursor-pointer transition"
+              >
+                <option value="">Select a service...</option>
+                <option value="music_lesson">Music Lessons</option>
+                <option value="recording">Recording</option>
+                <option value="mixing">Mixing</option>
+                <option value="band_rehearsal">Band Rehearsal</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
+
+            {/* Step 3: Duration Selection */}
+            {miniBooking.service && (
+              <div>
+                {SERVICE_CONFIG[miniBooking.service]?.durationFixed ? (
+                  <>
+                    <label className="text-xs sm:text-sm font-semibold text-gray-200 block mb-2">Duration</label>
+                    <div className="p-2.5 sm:p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-gray-300 text-xs sm:text-sm">
+                      1 hour (automatically set for Music Lessons)
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <label className="text-xs sm:text-sm font-semibold text-gray-200 block mb-2">Duration *</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {DURATION_OPTIONS.map((option) => (
+                        <button
+                          key={option.minutes}
+                          type="button"
+                          onClick={() => handleMiniDurationChange(option.minutes.toString())}
+                          className={`p-2 sm:p-3 rounded border-2 transition font-medium text-xs sm:text-sm
+                            ${miniBooking.duration === option.minutes.toString()
+                              ? 'border-[#ffd700] bg-[#ffd700]/10 text-[#ffd700]'
+                              : 'border-[#3d3d3d] bg-[#1c1c1c] text-gray-300 hover:border-[#ffd700]'
+                            }
+                          `}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Date Selection */}
+            {miniBooking.service && miniBooking.duration && (
+              <div>
+                <label className="text-xs sm:text-sm font-semibold text-gray-200 block mb-2">Booking Date *</label>
+                <input 
+                  type="date" 
+                  min={today}
+                  value={miniBooking.date}
+                  onChange={(e) => handleMiniDateChange(e.target.value)}
+                  className="w-full p-2.5 sm:p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-white text-sm focus:border-[#ffd700] focus:ring-1 focus:ring-[#ffd700] outline-none transition"
+                />
+              </div>
+            )}
+
+            {/* Step 5: Time Slot Selection */}
+            {canShowMiniTimeSlots && (
+              <div>
+                <label className="text-xs sm:text-sm font-semibold text-gray-200 block mb-2">Time Slot *</label>
+                
+                {miniSlotsLoading && (
+                  <div className="p-2.5 sm:p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-gray-300 text-xs sm:text-sm">
+                    Loading available slots...
                   </div>
-                </>
-              ) : (
-                <>
-                  <label className="text-sm font-semibold text-gray-200 block mb-2">Duration *</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {DURATION_OPTIONS.map((option) => (
+                )}
+
+                {miniSlotsError && (
+                  <div className="p-2.5 sm:p-3 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs sm:text-sm">
+                    {miniSlotsError}
+                  </div>
+                )}
+
+                {!miniSlotsLoading && miniAvailableSlots.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+                    {miniAvailableSlots.map((slot, idx) => (
                       <button
-                        key={option.minutes}
+                        key={idx}
                         type="button"
-                        onClick={() => handleMiniDurationChange(option.minutes.toString())}
-                        className={`p-3 rounded border-2 transition font-medium text-sm
-                          ${miniBooking.duration === option.minutes.toString()
+                        onClick={() => handleMiniTimeSlotChange(slot)}
+                        className={`p-2 rounded border-2 transition font-medium text-xs
+                          ${miniBooking.timeSlot === slot.display
                             ? 'border-[#ffd700] bg-[#ffd700]/10 text-[#ffd700]'
                             : 'border-[#3d3d3d] bg-[#1c1c1c] text-gray-300 hover:border-[#ffd700]'
                           }
                         `}
                       >
-                        {option.label}
+                        {slot.display}
                       </button>
                     ))}
                   </div>
-                </>
-              )}
-            </div>
-          )}
+                )}
 
-          {/* Step 4: Date Selection */}
-          {miniBooking.service && miniBooking.duration && (
-            <div>
-              <label className="text-sm font-semibold text-gray-200 block mb-2">Booking Date *</label>
-              <input 
-                type="date" 
-                min={today}
-                value={miniBooking.date}
-                onChange={(e) => handleMiniDateChange(e.target.value)}
-                className="w-full p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-white focus:border-[#ffd700] focus:ring-1 focus:ring-[#ffd700] outline-none"
-              />
-            </div>
-          )}
-
-          {/* Step 5: Time Slot Selection */}
-          {canShowMiniTimeSlots && (
-            <div>
-              <label className="text-sm font-semibold text-gray-200 block mb-2">Time Slot *</label>
-              
-              {miniSlotsLoading && (
-                <div className="p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-gray-300 text-sm">
-                  Loading available slots...
-                </div>
-              )}
-
-              {miniSlotsError && (
-                <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                  {miniSlotsError}
-                </div>
-              )}
-
-              {!miniSlotsLoading && miniAvailableSlots.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {miniAvailableSlots.map((slot, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleMiniTimeSlotChange(slot)}
-                      className={`p-2 rounded border-2 transition font-medium text-xs
-                        ${miniBooking.timeSlot === slot.display
-                          ? 'border-[#ffd700] bg-[#ffd700]/10 text-[#ffd700]'
-                          : 'border-[#3d3d3d] bg-[#1c1c1c] text-gray-300 hover:border-[#ffd700]'
-                        }
-                      `}
-                    >
-                      {slot.display}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {!miniSlotsLoading && miniAvailableSlots.length === 0 && !miniSlotsError && (
-                <div className="p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-gray-400 text-sm">
-                  No available time slots for this date
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Button with Validation */}
-          <button 
-            type="button" 
-            onClick={handleRequestBooking}
-            disabled={!miniBooking.name || !miniBooking.service || !miniBooking.duration || !miniBooking.date || !miniBooking.timeSlot}
-            className="bg-[#ffd700] hover:bg-[#ffe44c] text-black font-semibold py-3 rounded-full transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Request Booking
-          </button>
+                {!miniSlotsLoading && miniAvailableSlots.length === 0 && !miniSlotsError && (
+                  <div className="p-2.5 sm:p-3 rounded bg-[#1c1c1c] border border-[#3d3d3d] text-gray-400 text-xs sm:text-sm">
+                    No available time slots for this date
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Button with Validation */}
+            <button 
+              type="button" 
+              onClick={handleRequestBooking}
+              disabled={!miniBooking.name || !miniBooking.service || !miniBooking.duration || !miniBooking.date || !miniBooking.timeSlot}
+              className="bg-[#ffd700] hover:bg-[#ffe44c] text-black font-semibold py-2.5 sm:py-3 rounded-full transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            >
+              Request Booking
+            </button>
+          </form>
         </div>
       </aside>
 
       {/* Footer (Icons using Fa components) */}
-      <footer className="bg-[#1b1b1b] text-[#bbb] p-8 text-center border-t border-[#444]">
-        <p>MixLab Studio</p>
-        <p>Professional Music Studio in Pasig</p>
-        <div className="flex justify-center gap-5 mt-3 text-2xl">
-          <a href="https://www.instagram.com/mixlabmusicstudios.ph" target="_blank" rel="noopener noreferrer" className="hover:text-[#ffd700] transition">
-            <FaInstagram />
+      <footer className="bg-[#1b1b1b] text-[#bbb] py-8 sm:py-10 md:py-12 px-4 sm:px-6 md:px-8 text-center border-t border-[#444]">
+        <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">MixLab Studio</h3>
+        <p className="text-xs sm:text-sm md:text-base">Professional Music Studio in Pasig</p>
+        <div className="flex justify-center gap-4 sm:gap-5 md:gap-6 mt-4 sm:mt-5 text-lg sm:text-xl md:text-2xl">
+          <a href="https://www.instagram.com/mixlabmusicstudios.ph" target="_blank" rel="noopener noreferrer" className="hover:text-[#ffd700] transition p-2 rounded-lg hover:bg-white/5">
+            <FaInstagram aria-label="Instagram" />
           </a>
-          <a href="https://web.facebook.com/mixlabmusicstudios" target="_blank" rel="noopener noreferrer" className="hover:text-[#ffd700] transition">
-            <FaFacebook />
+          <a href="https://web.facebook.com/mixlabmusicstudios" target="_blank" rel="noopener noreferrer" className="hover:text-[#ffd700] transition p-2 rounded-lg hover:bg-white/5">
+            <FaFacebook aria-label="Facebook" />
           </a>
-          <a href="https://tiktok.com/@mixlabmusicstudios" target="_blank" rel="noopener noreferrer" className="hover:text-[#ffd700] transition">
-            <FaTiktok />
+          <a href="https://tiktok.com/@mixlabmusicstudios" target="_blank" rel="noopener noreferrer" className="hover:text-[#ffd700] transition p-2 rounded-lg hover:bg-white/5">
+            <FaTiktok aria-label="TikTok" />
           </a>
         </div>
       </footer>
@@ -1127,27 +1148,27 @@ export default function Landing() {
           />
           {/* Modal */}
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#232323] rounded-2xl p-8 w-full max-w-md relative overflow-y-auto max-h-[90vh]" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
+            <div className="bg-[#232323] rounded-2xl p-6 sm:p-8 w-full max-w-sm relative overflow-y-auto max-h-[90vh]" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
 
               {/* Header */}
-              <div className="text-center mb-6 pb-6 border-b border-[#3d3d3d]">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#1b1b1b] mb-4">
-                  <span className="text-4xl" style={{ color: '#ffd700' }}>✓</span>
+              <div className="text-center mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-[#3d3d3d]">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#1b1b1b] mb-3 sm:mb-4">
+                  <span className="text-2xl sm:text-4xl" style={{ color: '#ffd700' }}>✓</span>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Booking Confirmed!</h2>
-                <p className="text-[#bbb]">Your studio session has been successfully booked</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">Booking Confirmed!</h2>
+                <p className="text-xs sm:text-sm text-[#bbb]">Your studio session has been successfully booked</p>
               </div>
 
               {/* Content Layout */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Booking Reference */}
-                <div className="text-[#ffd700] font-mono text-sm bg-[#1b1b1b] px-3 py-2 rounded-lg inline-block mx-auto">
+                <div className="text-[#ffd700] font-mono text-xs sm:text-sm bg-[#1b1b1b] px-3 py-2 rounded-lg w-fit mx-auto">
                   Booking Reference: {bookingDetails.booking_reference || bookingDetails.booking_id}
                 </div>
 
                 {/* Optional email line */}
                 {bookingDetails.email && (
-                  <p className="text-xs text-[#aaa] text-center">
+                  <p className="text-xs text-[#aaa] text-center break-all">
                     A confirmation email has been sent to {bookingDetails.email}.
                   </p>
                 )}
@@ -1163,7 +1184,7 @@ export default function Landing() {
                     window.location.href = '/';
                   }
                 }}
-                className="mt-8 w-full bg-[#ffd700] hover:bg-[#ffe44c] text-black font-semibold py-3 rounded-lg transition text-lg"
+                className="mt-6 sm:mt-8 w-full bg-[#ffd700] hover:bg-[#ffe44c] text-black font-semibold py-2.5 sm:py-3 rounded-lg transition text-sm sm:text-base"
               >
                 View Booking Details
               </button>
@@ -1182,26 +1203,27 @@ export default function Landing() {
           />
           {/* Modal */}
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#232323] rounded-2xl p-8 w-full max-w-2xl relative" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
+            <div className="bg-[#232323] rounded-2xl p-6 sm:p-8 w-full max-w-lg sm:max-w-2xl relative" style={{ boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)' }}>
               {/* Close Button */}
               <button
                 onClick={() => setShowTimeModal(false)}
-                className="absolute top-4 right-4 text-[#bbb] hover:text-[#ffd700] text-2xl transition"
+                className="absolute top-3 sm:top-4 right-3 sm:right-4 text-[#bbb] hover:text-[#ffd700] text-xl sm:text-2xl transition rounded-lg hover:bg-white/5 p-2"
+                aria-label="Close"
               >
                 ×
               </button>
 
               {/* Modal Header */}
-              <h3 className="text-2xl font-bold text-[#ffd700] mb-6">Available Time Slots</h3>
-              <p className="text-[#bbb] mb-6">Select a time slot for {miniBooking.service === 'vocal' ? 'Vocal Recording' : miniBooking.service === 'band' ? 'Band Recording' : miniBooking.service === 'podcast' ? 'Podcast' : 'Mixing & Mastering'}</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#ffd700] mb-4 sm:mb-6 pr-8">Available Time Slots</h3>
+              <p className="text-xs sm:text-sm text-[#bbb] mb-4 sm:mb-6">Select a time slot for {miniBooking.service === 'vocal' ? 'Vocal Recording' : miniBooking.service === 'band' ? 'Band Recording' : miniBooking.service === 'podcast' ? 'Podcast' : 'Mixing & Mastering'}</p>
 
               {/* Time Slots Grid */}
-              <div className="grid grid-cols-4 gap-2 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-96 overflow-y-auto">
                 {getAvailableTimeSlots(miniBooking.service).map((time) => (
                   <button
                     key={time}
                     onClick={() => handleTimeSelect(time)}
-                    className={`p-3 rounded-lg font-semibold transition border-2 ${
+                    className={`p-2 sm:p-3 rounded-lg font-semibold transition border-2 text-xs sm:text-sm ${
                       miniBooking.time === time
                         ? 'bg-[#ffd700] text-black border-[#ffd700]'
                         : 'bg-[#1b1b1b] text-white border-[#3d3d3d] hover:border-[#ffd700]'
@@ -1215,7 +1237,7 @@ export default function Landing() {
               {/* Action Button */}
               <button
                 onClick={() => setShowTimeModal(false)}
-                className="w-full mt-6 bg-[#ffd700] text-black font-bold py-2 rounded-lg hover:bg-[#ffe44c] transition"
+                className="w-full mt-5 sm:mt-6 bg-[#ffd700] text-black font-bold py-2.5 sm:py-3 rounded-lg hover:bg-[#ffe44c] transition text-sm sm:text-base"
               >
                 Close
               </button>

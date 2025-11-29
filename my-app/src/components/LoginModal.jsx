@@ -84,6 +84,15 @@ export default function LoginModal({ isOpen, onClose, buttonRef }) {
 
   if (!isOpen) return null;
 
+  // Calculate position for desktop (md and above)
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+  const modalStyle = isDesktop && buttonRef ? {
+    position: 'fixed',
+    top: (buttonRef.getBoundingClientRect().bottom + 10) + 'px',
+    right: Math.max(0, window.innerWidth - (buttonRef.getBoundingClientRect().right || 0)) + 'px',
+    zIndex: 50
+  } : {};
+
   return (
     <>
       {/* Backdrop */}
@@ -92,19 +101,15 @@ export default function LoginModal({ isOpen, onClose, buttonRef }) {
         onClick={onClose}
       />
 
-      {/* Dropdown Modal */}
-      <div className="fixed z-50" style={{
-        top: buttonRef?.getBoundingClientRect().bottom + 10 + 'px',
-        left: 'auto',
-        right: Math.max(0, window.innerWidth - (buttonRef?.getBoundingClientRect().right || 0)) + 'px'
-      }}>
-        <div className="bg-[#2a2a2a] rounded-2xl w-96 p-10 relative border border-white/5 animate-slideIn" style={{
+      {/* Dropdown Modal - Responsive */}
+      <div className={`fixed z-50 p-4 ${!isDesktop ? 'inset-0 flex items-center justify-center' : ''}`} style={!isDesktop ? {} : modalStyle}>
+        <div className="bg-[#2a2a2a] rounded-2xl w-full max-w-sm md:w-96 p-6 sm:p-10 relative border border-white/5 animate-slideIn" style={{
           boxShadow: '0 0 30px rgba(255, 215, 0, 0.15)'
         }}>
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-[#aaa] hover:text-white text-2xl transition"
+            className="absolute top-2 sm:top-4 right-2 sm:right-4 text-[#aaa] hover:text-white text-xl sm:text-2xl transition p-1 rounded hover:bg-white/5"
             aria-label="Close modal"
           >
             ×
@@ -119,14 +124,14 @@ export default function LoginModal({ isOpen, onClose, buttonRef }) {
             maskComposite: 'exclude'
           }}></div>
 
-          <h1 className="text-3xl font-bold text-white mb-2" style={{ textShadow: '0 0 6px rgba(255, 215, 0, 0.3)' }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2 pr-8" style={{ textShadow: '0 0 6px rgba(255, 215, 0, 0.3)' }}>
             Login
           </h1>
-          <p className="text-[#bbb] mb-8 text-sm">Sign in to your MixLab Studio account</p>
+          <p className="text-xs sm:text-sm text-[#bbb] mb-6 sm:mb-8">Sign in to your MixLab Studio account</p>
 
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <div>
-              <label htmlFor="identifier" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="identifier" className="block text-xs sm:text-sm font-semibold text-white mb-2">
                 Email or Username
               </label>
               <input
@@ -136,13 +141,13 @@ export default function LoginModal({ isOpen, onClose, buttonRef }) {
                 onChange={handleChange}
                 placeholder="Enter your email or username"
                 required
-                className="w-full px-4 py-3 bg-[#1c1c1c] border border-[#3d3d3d] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#ffd700] focus:shadow-[0_0_6px_#ffd700] transition"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-[#1c1c1c] border border-[#3d3d3d] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#ffd700] focus:shadow-[0_0_6px_#ffd700] transition"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="password" className="block text-xs sm:text-sm font-semibold text-white mb-2">
                 Password
               </label>
               <div className="relative">
@@ -153,12 +158,12 @@ export default function LoginModal({ isOpen, onClose, buttonRef }) {
                   onChange={handleChange}
                   placeholder="Enter your password"
                   required
-                  className="w-full px-4 py-3 pr-12 bg-[#1c1c1c] border border-[#3d3d3d] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#ffd700] focus:shadow-[0_0_6px_#ffd700] transition"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base bg-[#1c1c1c] border border-[#3d3d3d] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-[#ffd700] focus:shadow-[0_0_6px_#ffd700] transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 hover:opacity-70 transition"
+                  className="absolute right-2 sm:right-3 top-2.5 sm:top-3.5 hover:opacity-70 transition p-1"
                   aria-label="Toggle password visibility"
                 >
                   <EyeIcon slashed={!showPassword} />
@@ -170,61 +175,61 @@ export default function LoginModal({ isOpen, onClose, buttonRef }) {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full bg-[#ffd700] hover:bg-[#ffe44c] text-black font-bold py-3 rounded-lg transition mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#ffd700] hover:bg-[#ffe44c] text-black font-bold py-2.5 sm:py-3 text-sm sm:text-base rounded-lg transition mt-2 sm:mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ boxShadow: '0 0 12px rgba(255, 215, 0, 0.4)' }}
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
-            {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+            {error && <div className="text-red-500 text-xs sm:text-sm mt-2">{error}</div>}
 
             {/* Forgot Password */}
             <a 
               href="/auth/forgot-password" 
-              className="block text-left text-[#aaa] hover:underline text-sm transition mt-2"
+              className="block text-left text-[#aaa] hover:underline text-xs sm:text-sm transition mt-1 sm:mt-2"
             >
               Forgot password?
             </a>
 
             {/* Divider */}
-            <div className="relative my-6">
+            <div className="relative my-4 sm:my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[#444]"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
+              <div className="relative flex justify-center text-xs sm:text-sm">
                 <span className="px-2 bg-[#2a2a2a] text-[#aaa]">or sign in with</span>
               </div>
             </div>
 
             {/* Social Buttons */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <button
                 onClick={handleGoogleSignIn}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#333] hover:bg-[#db4437] border-none rounded-lg transition font-semibold"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm bg-[#333] hover:bg-[#db4437] border-none rounded-lg transition font-semibold"
                 style={{ boxShadow: '0 0 10px rgba(219, 68, 55, 0.4)' }}
               >
                 <img 
                   src="https://cdn-icons-png.flaticon.com/512/281/281764.png" 
                   alt="Google" 
-                  className="w-5 h-5" 
+                  className="w-4 sm:w-5 h-4 sm:h-5" 
                 />
                 <span className="text-white">Google</span>
               </button>
               <button
                 onClick={handleFacebookSignIn}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#333] hover:bg-[#4267b2] border-none rounded-lg transition font-semibold"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm bg-[#333] hover:bg-[#4267b2] border-none rounded-lg transition font-semibold"
                 style={{ boxShadow: '0 0 10px rgba(66, 103, 178, 0.4)' }}
               >
                 <img 
                   src="https://cdn-icons-png.flaticon.com/512/733/733547.png" 
                   alt="Facebook" 
-                  className="w-5 h-5" 
+                  className="w-4 sm:w-5 h-4 sm:h-5" 
                 />
                 <span className="text-white">Facebook</span>
               </button>
             </div>
 
             {/* Register Link */}
-            <p className="text-center text-[#bbb] mt-6 text-sm">
+            <p className="text-center text-[#bbb] mt-4 sm:mt-6 text-xs sm:text-sm">
               Don't have an account?{' '}
               <a 
                 href="/auth/register" 
